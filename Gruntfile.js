@@ -21,7 +21,7 @@ module.exports = function(grunt) {
 //			LODASH_INCLUDE: ['cloneDeep', 'isEqual'],
 			MAIN_LESS: '<%= SRC_FOLDER %>/less/_desktop.less',
 			MAIN_TS: '<%= SRC_FOLDER %>/ts/pml/Main.ts',
-			TEST_COUNT: 0,
+			TEST_COUNT: 1,
 			
 			// Other variables
 			
@@ -31,6 +31,7 @@ module.exports = function(grunt) {
 //			LODASH_IN_TEMP: '<%= TMP_FOLDER %>/script/lodash.js',
 			MINIFIED_JS_IN_TEMP: '<%= TMP_FOLDER %>/script/<%= JS_NAME %>.min.js', 
 			SRC_FOLDER: 'src',
+			TEST_FOLDER: 'test',
 			TMP_FOLDER: 'tmp',
 			
 			// Targets
@@ -79,6 +80,21 @@ module.exports = function(grunt) {
 					files: [
 						{src: ['<%= JS_IN_TEMP %>'], dest: '<%= MINIFIED_JS_IN_TEMP %>'}
 					]
+				},
+				tests: {
+					files:[{
+						expand: true,
+						cwd: '<%= TEST_FOLDER %>/_dropin',
+						dot: true,
+						src: '<%= KAPOCS_PATTERN %>',
+						dest: '<%= BUILD_FOLDER %>'
+					}, {
+						expand: true,
+						cwd: '<%= TMP_FOLDER %>/_dropin',
+						dot: true,
+						src: '<%= KAPOCS_PATTERN %>',
+						dest: '<%= BUILD_FOLDER %>'
+					}]
 				}
 			},
 			kapocs: {
@@ -112,6 +128,47 @@ module.exports = function(grunt) {
 					templates: [{
 						expand: true,
 						cwd: '<%= SRC_FOLDER %>/_templates',
+						dot: true,
+						src: '<%= KAPOCS_PATTERN %>',
+						dest: '<%= BUILD_FOLDER %>'
+					}, {
+						expand: true,
+						cwd: '<%= TMP_FOLDER %>/_templates',
+						dot: true,
+						src: '<%= KAPOCS_PATTERN %>',
+						dest: '<%= BUILD_FOLDER %>'
+					}]
+				},
+				tests: {
+					assets: [{
+						expand: true,
+						cwd: '<%= TEST_FOLDER %>/_assets',
+						dot: true,
+						src: '<%= KAPOCS_PATTERN %>',
+						dest: '<%= BUILD_FOLDER %>'
+					}, {
+						expand: true,
+						cwd: '<%= TMP_FOLDER %>/_assets',
+						dot: true,
+						src: '<%= KAPOCS_PATTERN %>',
+						dest: '<%= BUILD_FOLDER %>'
+					}],
+					assetTemplates: [{
+						expand: true,
+						cwd: '<%= TEST_FOLDER %>/_asset_templates',
+						dot: true,
+						src: '<%= KAPOCS_PATTERN %>',
+						dest: '<%= BUILD_FOLDER %>'
+					}, {
+						expand: true,
+						cwd: '<%= TMP_FOLDER %>/_asset_templates',
+						dot: true,
+						src: '<%= KAPOCS_PATTERN %>',
+						dest: '<%= BUILD_FOLDER %>'
+					}],
+					templates: [{
+						expand: true,
+						cwd: '<%= TEST_FOLDER %>/_templates',
 						dot: true,
 						src: '<%= KAPOCS_PATTERN %>',
 						dest: '<%= BUILD_FOLDER %>'
@@ -187,11 +244,11 @@ module.exports = function(grunt) {
 		
 		for (var i = 1; i <= config.TEST_COUNT; i++) {
 			var folderPath = '<%= TMP_FOLDER %>/_asset_templates/test' + i;
-			var jsPath = folderPath + '/script/test.js';
-			var cssPath = folderPath + '/style/test.css';
+			var jsPath = folderPath + '/script/test' + i + '.js';
+			var cssPath = folderPath + '/style/test' + i + '.css';
 			
-			config.less.tests.files[cssPath] = 'test/test' + i + '/less/_desktop.less';
-			config.typescript.tests.files[jsPath] = 'test/test' + i + '/Main.ts';
+			config.less.tests.files[cssPath] = 'test/less/test' + i + '/_desktop.less';
+			config.typescript.tests.files[jsPath] = 'test/ts/test' + i + '/Main.ts';
 		}
 		
 		return config;
@@ -213,7 +270,6 @@ module.exports = function(grunt) {
 		'clean:compile',
 		'copy:compile',
 		'typescript:compile',
-		'typescript:tests',
 		'uglify:compile',
 //		'lodash:compile',
 		'concat:compile',
@@ -225,13 +281,20 @@ module.exports = function(grunt) {
 		'clean:compile',
 		'copy:compile',
 		'typescript:compile',
-		'typescript:tests',
 		'copy:debug',
 //		'lodash:compile',
 		'concat:compile',
 		'less:debug',
 		'kapocs:compile',
 //		'appcache:compile',
+	]);
+	grunt.registerTask('tests', [
+		'clean:compile',
+		'copy:tests',
+		'typescript:tests',
+//		'lodash:compile',
+		'less:tests',
+		'kapocs:tests',
 	]);
 	grunt.registerTask('update', [
 		'shell:update',

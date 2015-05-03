@@ -4,9 +4,9 @@
 
 /// <reference path='../../../lib/jQuery.d.ts'/>
 
-/// <reference path='Parser.ts'/>
+/// <reference path='../../../src/pml/Parser.ts'/>
 
-module pml {
+module test1 {
 	export class Main {
 		
 		private static instance = new Main();
@@ -26,7 +26,7 @@ module pml {
 		onPmlLoaded(data: string, textStatus: string, jqXHR: jQuery.IXHR): void {
 			illa.Log.info(data);
 			
-			var parser = new Parser();
+			var parser = new pml.Parser();
 			illa.Log.info(parser.parse(data));
 		}
 	}

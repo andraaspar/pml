@@ -13,5 +13,8 @@
   ],
   "devDependencies": {
     "berek": "andraaspar/berek#v1.6"
+  },
+  "dependencies": {
+    "illa": "andraaspar/illa#v2.2"
   }
 }
