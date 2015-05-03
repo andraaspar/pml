@@ -1,0 +1,7 @@
+/.settings/
+/.project
+/node_modules/
+/bower_components/
+/tmp/
+/lib/
+/build/
