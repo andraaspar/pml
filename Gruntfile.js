@@ -247,8 +247,8 @@ module.exports = function(grunt) {
 			var jsPath = folderPath + '/script/test' + i + '.js';
 			var cssPath = folderPath + '/style/test' + i + '.css';
 			
-			config.less.tests.files[cssPath] = 'test/less/test' + i + '/_desktop.less';
-			config.typescript.tests.files[jsPath] = 'test/ts/test' + i + '/Main.ts';
+			config.less.tests.files[cssPath] = '<%= TEST_FOLDER %>/less/test' + i + '/_desktop.less';
+			config.typescript.tests.files[jsPath] = '<%= TEST_FOLDER %>/ts/test' + i + '/Main.ts';
 		}
 		
 		return config;
