@@ -5,6 +5,7 @@
 /// <reference path='../../../lib/jQuery.d.ts'/>
 
 /// <reference path='../../../src/pml/Parser.ts'/>
+/// <reference path='../../../src/pml/Stringer.ts'/>
 
 module test1 {
 	export class Main {
@@ -27,7 +28,8 @@ module test1 {
 			illa.Log.info(data);
 			
 			var parser = new pml.Parser();
-			illa.Log.info(parser.parse(data));
+			var stringer = new pml.Stringer();
+			illa.Log.info(stringer.stringify(parser.parse(data)));
 		}
 	}
 }

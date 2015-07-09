@@ -46,7 +46,7 @@ module pml {
 		
 		protected readElements(src: string): Element {
 			var rootElement = new Element();
-			rootElement.name = 'root';
+			rootElement.name = '';
 			rootElement.children = [];
 			
 			var splitSrc = src.split(this.tagStart);
@@ -85,7 +85,7 @@ module pml {
 			var contentSplit = src.split(this.valueDelimiter);
 			element.name = contentSplit[0];
 			if (!hasChildren) {
-				element.value = contentSplit[1];
+				element.value = contentSplit[1] || '';
 			}
 		}
 	}
