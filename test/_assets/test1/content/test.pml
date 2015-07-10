@@ -1,19 +1,18 @@
-{[|]}
-[article|
-	[title|Illa berek & nádak, {bogak, }erek.]
-	[body|
-		[p|[@class|first]
-			[|Antantémusz ]
-			[b|szórakatémusz]
-			[| szóraka tiki-taka bim-bam-]
-			[i|bum]
-			[|.]
+{[\]}
+[!DOCTYPE\[@html\]]
+[html\
+	[@lang\en]
+	[head\
+		[meta\[@charset\UTF-8]]
+		[title\PML test]
+	]
+	[body\
+		[h1\[@class\main-title]
+			[\This is a test]
 		]
-		[p|
-			[|Sárga ]
-			[a|[@href|https://www.google.hu/webhp?sourceid=chrome-instant&ion=1&espv=2&ie=UTF-8#q=b%C3%B6gre]bögre]
-			[| görbe bögre.{]
-			[p|} Ne edd meg, hanem.]
-		]
+		[p\[\Please ][b\don't][\ take it{
+		} seriously.]]
+		[!--\This is a HTML comment!]
+		[p\[\Visit this page: ][a\[@href\http://pirkadat.com]Click here!][\ – just for fun.]]
 	]
 ]
