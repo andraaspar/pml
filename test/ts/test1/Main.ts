@@ -4,6 +4,7 @@
 
 /// <reference path='../../../lib/jQuery.d.ts'/>
 
+/// <reference path='../../../src/pml/HTMLStringer.ts'/>
 /// <reference path='../../../src/pml/Parser.ts'/>
 /// <reference path='../../../src/pml/Stringer.ts'/>
 
@@ -31,6 +32,9 @@ module test1 {
 			var stringer = new pml.Stringer();
 			var root = parser.parse(data);
 			illa.Log.info(stringer.stringify(root));
+			
+			var htmlStringer = new pml.HTMLStringer();
+			illa.Log.info(htmlStringer.stringify(root));
 		}
 	}
 }

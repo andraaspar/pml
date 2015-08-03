@@ -65,6 +65,7 @@ module pml {
 					previousElement.nextSibling = element;
 					element.previousSibling = previousElement;
 				}
+				previousElement = element;
 				if (hasChildren) {
 					element.children = [];
 					parentElement = element;

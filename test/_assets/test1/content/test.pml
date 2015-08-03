@@ -12,7 +12,7 @@
 		]
 		[p=[=Please ][b=don't][= take it{
 		} seriously.]]
-		[!--=This is a HTML comment!]
+		[!--=This is a HTML comment!][= And some stuff ][b=that is][= inline.]
 		[p=[=Visit this page: ][a=[@href=http://pirkadat.com][=Click here!]][= – just for fun.]]
 	]
 ]
