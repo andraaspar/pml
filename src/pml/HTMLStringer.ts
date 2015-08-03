@@ -56,6 +56,10 @@ module pml {
 		private inlineDependingOnContentTags = [
 			'a'
 		];
+		private nonReplaceableCharacterTags = [
+			'script',
+			'style'
+		];
 		
 		private prettyPrint: boolean = true;
 		private indentChar: string = '\t';
@@ -72,7 +76,8 @@ module pml {
 			if (src.parent && src.name == '') {
 				// If text node
 				
-				result += this.prepareText(src.value);
+				var isNonReplaceableCharacterTag = this.checkIsNonReplaceableCharacterTag(src.parent);
+				result += this.prepareText(src.value, !isNonReplaceableCharacterTag, !isNonReplaceableCharacterTag);
 				
 			} else if (src.name.charAt(0) != '@') {
 				// If not attribute
@@ -136,7 +141,8 @@ module pml {
 							result += this.stringify(child, level + 1);
 						}
 					} else {
-						result += this.prepareText(src.value);
+						var isNonReplaceableCharacterTag = this.checkIsNonReplaceableCharacterTag(src);
+						result += this.prepareText(src.value, !isNonReplaceableCharacterTag, !isNonReplaceableCharacterTag);
 					}
 				}
 				
@@ -159,11 +165,21 @@ module pml {
 			return result;
 		}
 		
-		protected prepareText(src: string = ''): string {
-			var result = illa.StringUtil.escapeHTML(src);
+		protected prepareText(src: string = '', escapeHTML: boolean = true, expandTabs: boolean = true): string {
+			var result = src;
+			if (escapeHTML) {
+				result = illa.StringUtil.escapeHTML(result);
+			}
 			//result = result.replace(/(?:\r\n|\n|\r)/g, '<br/>');
-			result = result.replace(/\t/g, this.tabChar);
+			if (expandTabs) {
+				result = result.replace(/\t/g, this.tabChar);
+			}
 			return result;
+		}
+		
+		protected checkIsNonReplaceableCharacterTag(src: Element): boolean {
+			if (!src) return false;
+			return illa.ArrayUtil.indexOf(this.nonReplaceableCharacterTags, src.name) > -1;
 		}
 		
 		protected checkIsInlineDependingOnContent(src: Element): boolean {

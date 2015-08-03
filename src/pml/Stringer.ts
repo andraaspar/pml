@@ -16,7 +16,7 @@ module pml {
 		private eolChar: string = '\n';
 
 		constructor(
-			private preferredSeparatorPairs = ['{}', '[]', '()', '<>', '«»', '├┤', '╠╣', '◄►'],
+			private preferredSeparatorPairs = ['{}', '[]', '()', '<>', '«»', '◄►', '├┤', '╠╣'],
 			private preferredSingleSeparators = ['~', '|', '\\', '•', '→', '⁞', '▪', '╪']
 			) {
 
