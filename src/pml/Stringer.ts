@@ -10,31 +10,60 @@ module pml {
 		private valueDelimiter: string;
 		private tagEnd: string;
 		private commentEnd: string;
+		
+		private prettyPrint: boolean = true;
+		private indentChar: string = '\t';
+		private eolChar: string = '\n';
 
 		constructor(
 			private preferredSeparatorPairs = ['{}', '[]', '()', '<>', '«»', '├┤', '╠╣', '◄►'],
-			private preferredSingleSeparators = ['|', '=', ':', '-', '~', '\\', '/', '•', '→', '⁞', '▪', '╪']
+			private preferredSingleSeparators = ['=', ':', '-', '~', '|', '\\', '/', '•', '→', '⁞', '▪', '╪']
 			) {
 
 		}
 
-		stringify(src: Element): string {
+		stringify(src: Element, level = -1): string {
 			this.checkSeparators(src);
 			
 			var result = '';
+			var indent = '';
 			if (src.parent) {
+				// Only indent tag if it is not the root
+				if (this.prettyPrint) {
+					for (var i = 0; i < level; i++) {
+						indent += this.indentChar;
+					}
+					result += indent;
+				}
+				
+				// Only render tag if it is not the root
 				result += this.tagStart + src.name + this.valueDelimiter;
 			} else {
+				// For the root tag, render the header characters
 				result += this.commentStart + this.tagStart + this.valueDelimiter + this.tagEnd + this.commentEnd;
 			}
 			if (src.children) {
+				// Put EOL before rendering children
+				result += this.eolChar;
+				
 				for (var i = 0, n = src.children.length; i < n; i++) {
-					result += this.stringify(src.children[i]);
+					result += this.stringify(src.children[i], level + 1);
 				}
+				
+				// Indent tag end if this is not the root
+				if (src.parent) result += indent;
 			} else {
 				result += src.value;
 			}
-			if (src.parent) result += this.tagEnd;
+			if (src.parent) {
+				// If not root, add tag end
+				result += this.tagEnd;
+				
+				// Put EOL after tag end
+				if (this.prettyPrint) {
+					result += this.eolChar;
+				}
+			}
 			return result;
 		}
 
@@ -195,6 +224,30 @@ module pml {
 				highestCharCode = Math.max(highestCharCode, (separator ? separator.charCodeAt(0) : 0));
 			}
 			return String.fromCharCode(highestCharCode + 1);
+		}
+		
+		getPrettyPrint(): boolean {
+			return this.prettyPrint;
+		}
+		
+		setPrettyPrint(v: boolean): void {
+			this.prettyPrint = v;
+		}
+		
+		getIndentChar(): string {
+			return this.indentChar;
+		}
+		
+		setIndentChar(v: string): void {
+			this.indentChar = v;
+		}
+		
+		getEolChar(): string {
+			return this.eolChar;
+		}
+		
+		setEolChar(v: string): void {
+			this.eolChar = v;
 		}
 	}
 }

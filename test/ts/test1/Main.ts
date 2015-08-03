@@ -30,7 +30,6 @@ module test1 {
 			var parser = new pml.Parser();
 			var stringer = new pml.Stringer();
 			var root = parser.parse(data);
-			root.children[0].name += ['{}', '[]', '|', '=', ':', '-'].join(' ');
 			illa.Log.info(stringer.stringify(root));
 		}
 	}
