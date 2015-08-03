@@ -17,7 +17,7 @@ module pml {
 
 		constructor(
 			private preferredSeparatorPairs = ['{}', '[]', '()', '<>', '«»', '├┤', '╠╣', '◄►'],
-			private preferredSingleSeparators = ['=', ':', '-', '~', '|', '\\', '/', '•', '→', '⁞', '▪', '╪']
+			private preferredSingleSeparators = ['~', '|', '\\', '•', '→', '⁞', '▪', '╪']
 			) {
 
 		}

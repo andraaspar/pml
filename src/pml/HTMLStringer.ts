@@ -5,7 +5,23 @@
 module pml {
 	export class HTMLStringer {
 		
-		private noEndTags: string[] = ['meta', 'img', 'input'];
+		private noEndTags: string[] = [
+			'area',
+			'base',
+			'br',
+			'col',
+			'embed',
+			'hr',
+			'img',
+			'input',
+			'keygen',
+			'link',
+			'meta',
+			'param',
+			'source',
+			'track',
+			'wbr'
+		];
 		private inlineTags = [
 			'b',
 			'big',
@@ -44,6 +60,7 @@ module pml {
 		private prettyPrint: boolean = true;
 		private indentChar: string = '\t';
 		private eolChar: string = '\n';
+		private tabChar: string = '    ';
 		
 		constructor() {
 			
@@ -55,7 +72,7 @@ module pml {
 			if (src.parent && src.name == '') {
 				// If text node
 				
-				result += illa.StringUtil.escapeHTML(src.value || '');
+				result += this.prepareText(src.value);
 				
 			} else if (src.name.charAt(0) != '@') {
 				// If not attribute
@@ -90,9 +107,16 @@ module pml {
 							var child = src.children[i];
 							if (child.name.charAt(0) == '@') {
 								var attributeName = child.name.slice(1);
-								result += ' ' + illa.StringUtil.escapeHTML(attributeName);
+								if (attributeName || child.value) result += ' ';
+								
+								// Attribute name is not required for old DOCTYPE support
+								
+								if (attributeName) {
+									result += illa.StringUtil.escapeHTML(attributeName);
+								}
 								if (child.value) {
-									result += '="' + illa.StringUtil.escapeHTML(child.value) + '"'
+									if (attributeName) result += '=';
+									result += '"' + illa.StringUtil.escapeHTML(child.value) + '"';
 								}
 							}
 						}
@@ -112,7 +136,7 @@ module pml {
 							result += this.stringify(child, level + 1);
 						}
 					} else {
-						result += illa.StringUtil.escapeHTML(src.value);
+						result += this.prepareText(src.value);
 					}
 				}
 				
@@ -132,6 +156,13 @@ module pml {
 				}
 			}
 			
+			return result;
+		}
+		
+		protected prepareText(src: string = ''): string {
+			var result = illa.StringUtil.escapeHTML(src);
+			//result = result.replace(/(?:\r\n|\n|\r)/g, '<br/>');
+			result = result.replace(/\t/g, this.tabChar);
 			return result;
 		}
 		
