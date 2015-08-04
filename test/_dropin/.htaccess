@@ -1,10 +1,9 @@
-# Make sure appcache files are served with correct mime-type
-# From: https://developer.mozilla.org/en-US/docs/Web/HTML/Using_the_application_cache
-AddType text/cache-manifest .appcache
+AddCharset UTF-8 .pml
+AddType text/plain .pml
 
-# Disable caching of HTML & appcache files
+# Disable caching of HTML files
 # From: http://www.askapache.com/htaccess/using-http-headers-with-htaccess.html
-<FilesMatch "\.(html|htm|appcache)$">
+<FilesMatch "\.(html|htm)$">
 	FileETag None
 	<ifModule mod_headers.c>
 		Header unset ETag

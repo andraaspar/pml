@@ -73,7 +73,8 @@ module pml {
 		private prettyPrint: boolean = true;
 		private indentChar: string = '\t';
 		private eolChar: string = '\n';
-		private tabChar: string = '    ';
+		private tabExpansion: string = '    ';
+		private attributeChar: string = '@';
 		private expandLineBreaks: boolean = false;
 		private expandTabs: boolean = false;
 
@@ -94,7 +95,7 @@ module pml {
 				
 				result += this.prepareText(src, indent);
 
-			} else if (src.name.charAt(0) != '@') {
+			} else if (src.name.charAt(0) != this.attributeChar) {
 				// If not attribute
 				
 				var startsWithExclamationMark = src.name.charAt(0) == '!';
@@ -125,7 +126,7 @@ module pml {
 						
 						for (var i = 0, n = src.children.length; i < n; i++) {
 							var child = src.children[i];
-							if (child.name.charAt(0) == '@') {
+							if (child.name.charAt(0) == this.attributeChar) {
 								var attributeName = child.name.slice(1);
 								if (attributeName || child.value) result += ' ';
 								
@@ -193,7 +194,7 @@ module pml {
 					result = result.replace(/(?:\r\n|\n|\r)/g, breakTag);
 				}
 				if (this.expandTabs) {
-					result = result.replace(/\t/g, this.tabChar);
+					result = result.replace(/\t/g, this.tabExpansion);
 				}
 			}
 			return result;
@@ -223,7 +224,7 @@ module pml {
 			if (!src) return false;
 			switch (src.name.charAt(0)) {
 				case '':
-				case '@':
+				case this.attributeChar:
 				case '!':
 				case '?':
 					return false;
@@ -303,12 +304,12 @@ module pml {
 			this.eolChar = v;
 		}
 
-		getTabChar(): string {
-			return this.tabChar;
+		getTabExpansion(): string {
+			return this.tabExpansion;
 		}
 
-		setTabChar(v: string): void {
-			this.tabChar = v;
+		setTabExpansion(v: string): void {
+			this.tabExpansion = v;
 		}
 		
 		getExpandLineBreaks(): boolean {
@@ -341,6 +342,14 @@ module pml {
 		
 		setNoLineBreakExpansionTags(v: string[]): void {
 			this.noLineBreakExpansionTags = v;
+		}
+		
+		getAttributeChar(): string {
+			return this.attributeChar;
+		}
+		
+		setAttributeChar(v: string): void {
+			this.attributeChar = v;
 		}
 	}
 }
