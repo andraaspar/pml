@@ -1,10 +1,6 @@
-/// <reference path='../../../lib/illa/_module.ts'/>
-/// <reference path='../../../lib/illa/Arrkup.ts'/>
-/// <reference path='../../../lib/illa/Log.ts'/>
-
 /// <reference path='../../../lib/jQuery.d.ts'/>
 
-/// <reference path='../../../src/pml/HTMLStringer.ts'/>
+/// <reference path='../../../src/pml/HtmlStringer.ts'/>
 /// <reference path='../../../src/pml/Parser.ts'/>
 /// <reference path='../../../src/pml/Stringer.ts'/>
 
@@ -29,12 +25,22 @@ module test1 {
 			illa.Log.info(data);
 			
 			var parser = new pml.Parser();
-			var stringer = new pml.Stringer();
+			
+			parser.getLinter().setThrowOnError(false);
+			
 			var root = parser.parse(data);
+			illa.Log.info(parser.getLinter().getErrors().length + ' errors, ' + parser.getLinter().getWarnings().length + ' warnings.');
+			
+			var stringer = new pml.Stringer(['«»', '◄►'], ['•']);
 			illa.Log.info(stringer.stringify(root));
 			
-			var htmlStringer = new pml.HTMLStringer();
+			var htmlStringer = new pml.HtmlStringer();
+			htmlStringer.setExpandLineBreaks(true);
+			htmlStringer.setExpandTabs(true);
 			illa.Log.info(htmlStringer.stringify(root));
+			
+			var iframe = jQuery('<iframe>').appendTo('body');
+			(<HTMLIFrameElement>iframe.get(0)).src = 'data:text/html;charser=utf-8,' + htmlStringer.stringify(root);
 		}
 	}
 }

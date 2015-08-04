@@ -16,8 +16,8 @@ module pml {
 		private eolChar: string = '\n';
 
 		constructor(
-			private preferredSeparatorPairs = ['{}', '[]', '()', '<>', '«»', '◄►', '├┤', '╠╣'],
-			private preferredSingleSeparators = ['~', '|', '\\', '•', '→', '⁞', '▪', '╪']
+			private preferredSeparatorPairs: string[] = ['{}', '[]', '()', '<>', '«»', '◄►', '├┤', '╠╣'],
+			private preferredSingleSeparators: string[] = ['~', '|', '\\', '•', '→', '⁞', '▪', '╪']
 			) {
 
 		}
@@ -30,6 +30,7 @@ module pml {
 			if (src.parent) {
 				// Only indent tag if it is not the root
 				if (this.prettyPrint) {
+					result += this.eolChar;
 					for (var i = 0; i < level; i++) {
 						indent += this.indentChar;
 					}
@@ -43,26 +44,25 @@ module pml {
 				result += this.commentStart + this.tagStart + this.valueDelimiter + this.tagEnd + this.commentEnd;
 			}
 			if (src.children) {
-				// Put EOL before rendering children
-				result += this.eolChar;
-				
 				for (var i = 0, n = src.children.length; i < n; i++) {
 					result += this.stringify(src.children[i], level + 1);
 				}
 				
-				// Indent tag end if this is not the root
-				if (src.parent) result += indent;
+				if (this.prettyPrint) {
+					// Indent tag end if this is not the root
+					if (src.parent) result += indent;
+				}
 			} else {
 				result += src.value;
 			}
 			if (src.parent) {
+				if (src.children) {
+					// If has children, put EOL before tag end
+					result += this.eolChar;
+					result += indent;
+				}
 				// If not root, add tag end
 				result += this.tagEnd;
-				
-				// Put EOL after tag end
-				if (this.prettyPrint) {
-					result += this.eolChar;
-				}
 			}
 			return result;
 		}
@@ -109,7 +109,7 @@ module pml {
 		}
 		
 		private checkSeparatorIsValid(separators: string[], separator: string): boolean {
-			if (!separator || separator.length != 1) {
+			if (!separator || separator.length != 1 || /[\s \r\n]/.test(separator)) {
 				return false;
 			}
 			var index = illa.ArrayUtil.indexOf(separators, separator);
@@ -248,6 +248,22 @@ module pml {
 		
 		setEolChar(v: string): void {
 			this.eolChar = v;
+		}
+		
+		getPreferredSeparatorPairs(): string[] {
+			return this.preferredSeparatorPairs;
+		}
+		
+		setPreferredSeparatorPairs(v: string[]): void {
+			this.preferredSeparatorPairs = v;
+		}
+		
+		getPreferredSingleSeparators(): string[] {
+			return this.preferredSingleSeparators;
+		}
+		
+		setPreferredSingleSeparators(v: string[]): void {
+			this.preferredSingleSeparators = v;
 		}
 	}
 }

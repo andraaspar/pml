@@ -1,4 +1,5 @@
 /// <reference path='Element.ts'/>
+/// <reference path='Linter.ts'/>
 
 module pml {
 	export class Parser {
@@ -9,11 +10,18 @@ module pml {
 		private tagEnd: string;
 		private commentEnd: string;
 		
+		private linter: Linter;
+		private doesLint: boolean = true;
+		
 		constructor() {
-			
+			this.linter = new Linter();
+			this.linter.setThrowOnError(true);
+			this.linter.setLogMessages(true);
 		}
 		
 		parse(src: string): Element {
+			this.linter.lint(src);
+			
 			this.readDelimiters(src);
 			var commentlessSrc = this.removeComments(src);
 			return this.readElements(commentlessSrc);
@@ -88,6 +96,38 @@ module pml {
 			if (!hasChildren) {
 				element.value = contentSplit[1] || '';
 			}
+		}
+		
+		getDoesLint(): boolean {
+			return this.doesLint;
+		}
+		
+		setDoesLint(v: boolean): void {
+			this.doesLint = v;
+		}
+		
+		getLinter(): Linter {
+			return this.linter;
+		}
+		
+		getCommentStart(): string {
+			return this.commentStart;
+		}
+		
+		getTagStart(): string {
+			return this.tagStart;
+		}
+		
+		getValueDelimiter(): string {
+			return this.valueDelimiter;
+		}
+		
+		getTagEnd(): string {
+			return this.tagEnd;
+		}
+		
+		getCommentEnd(): string {
+			return this.commentEnd;
 		}
 	}
 }

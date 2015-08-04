@@ -1,10 +1,11 @@
+/// <reference path='../../lib/illa/ArrayUtil.ts'/>
 /// <reference path='../../lib/illa/StringUtil.ts'/>
 
 /// <reference path='Element.ts'/>
 
 module pml {
-	export class HTMLStringer {
-		
+	export class HtmlStringer {
+
 		private noEndTags: string[] = [
 			'area',
 			'base',
@@ -22,7 +23,7 @@ module pml {
 			'track',
 			'wbr'
 		];
-		private inlineTags = [
+		private inlineTags: string[] = [
 			'b',
 			'big',
 			'i',
@@ -53,32 +54,46 @@ module pml {
 			'label',
 			'select'
 		];
-		private inlineDependingOnContentTags = [
+		private inlineDependingOnContentTags: string[] = [
 			'a'
 		];
-		private nonReplaceableCharacterTags = [
+		private nonReplaceableCharacterTags: string[] = [
+			'!--',
 			'script',
 			'style'
 		];
-		
+		private preformattedTags: string[] = [
+			'pre'
+		];
+		private noLineBreakExpansionTags: string[] = [
+			'!--',
+			'title'
+		];
+
 		private prettyPrint: boolean = true;
 		private indentChar: string = '\t';
 		private eolChar: string = '\n';
 		private tabChar: string = '    ';
-		
+		private expandLineBreaks: boolean = false;
+		private expandTabs: boolean = false;
+
 		constructor() {
-			
+
 		}
-		
+
 		stringify(src: Element, level = -1): string {
 			var result = '';
 			
+			var indent = '';
+			for (var i = 0; i < level; i++) {
+				indent += this.indentChar;
+			}
+
 			if (src.parent && src.name == '') {
 				// If text node
 				
-				var isNonReplaceableCharacterTag = this.checkIsNonReplaceableCharacterTag(src.parent);
-				result += this.prepareText(src.value, !isNonReplaceableCharacterTag, !isNonReplaceableCharacterTag);
-				
+				result += this.prepareText(src, indent);
+
 			} else if (src.name.charAt(0) != '@') {
 				// If not attribute
 				
@@ -87,24 +102,24 @@ module pml {
 				var startsWithQuestionMark = src.name.charAt(0) == '?';
 				var hasEnd = !startsWithExclamationMark && !startsWithQuestionMark && illa.ArrayUtil.indexOf(this.noEndTags, src.name) == -1
 				var isBlock = this.checkIsBlock(src);
-				var indent = '';
 				
+
 				if (src.parent) {
 					// If not root
-					if (isBlock || this.checkIsBlock(src.previousSibling)) {
-						// Add EOL + indent if block or previous was block
-						result += this.eolChar;
-						for (var i = 0; i < level; i++) {
-							indent += this.indentChar;
+					
+					if (this.prettyPrint) {
+						if (isBlock || this.checkIsBlock(src.previousSibling)) {
+							// Add EOL + indent if block or previous was block
+							result += this.eolChar;
+							result += indent;
 						}
-						result += indent;
 					}
 					
 					// Render start tag
 					
 					result += '<';
 					result += illa.StringUtil.escapeHTML(src.name);
-					
+
 					if (src.children) {
 						// Render attributes
 						
@@ -133,7 +148,7 @@ module pml {
 					if (!hasEnd && !startsWithExclamationMark) result += '/';
 					if (!isComment) result += '>';
 				}
-				
+
 				if (hasEnd || isComment) {
 					if (src.children) {
 						for (var i = 0, n = src.children.length; i < n; i++) {
@@ -141,52 +156,69 @@ module pml {
 							result += this.stringify(child, level + 1);
 						}
 					} else {
-						var isNonReplaceableCharacterTag = this.checkIsNonReplaceableCharacterTag(src);
-						result += this.prepareText(src.value, !isNonReplaceableCharacterTag, !isNonReplaceableCharacterTag);
+						result += this.prepareText(src, indent);
 					}
 				}
-				
+
 				if (src.parent && hasEnd) {
-					if (this.checkHasBlockContent(src)) {
-						result += this.eolChar;
-						result += indent;
+					if (this.prettyPrint) {
+						if (this.checkHasBlockContent(src)) {
+							result += this.eolChar;
+							result += indent;
+						}
 					}
-					
+
 					result += '</';
 					result += illa.StringUtil.escapeHTML(src.name);
 					result += '>';
 				}
-				
+
 				if (isComment) {
 					result += '-->';
 				}
 			}
-			
+
 			return result;
 		}
-		
-		protected prepareText(src: string = '', escapeHTML: boolean = true, expandTabs: boolean = true): string {
-			var result = src;
-			if (escapeHTML) {
+
+		protected prepareText(src: Element, indent: string): string {
+			var result = src.value || '';
+			if (!this.checkIsNonReplaceableCharacterTag(src)) {
 				result = illa.StringUtil.escapeHTML(result);
-			}
-			//result = result.replace(/(?:\r\n|\n|\r)/g, '<br/>');
-			if (expandTabs) {
-				result = result.replace(/\t/g, this.tabChar);
+				if (this.expandLineBreaks && !this.checkIsNoLineBreakExpansionTag(src)) {
+					var breakTag = '<br/>';
+					if (this.prettyPrint && !this.checkIsPreformattedTag(src)) {
+						breakTag += this.eolChar + indent;
+					}
+					result = result.replace(/(?:\r\n|\n|\r)/g, breakTag);
+				}
+				if (this.expandTabs) {
+					result = result.replace(/\t/g, this.tabChar);
+				}
 			}
 			return result;
 		}
-		
+
+		protected checkIsPreformattedTag(src: Element): boolean {
+			if (!src) return false;
+			return illa.ArrayUtil.indexOf(this.preformattedTags, src.name) > -1 || this.checkIsPreformattedTag(src.parent);
+		}
+
+		protected checkIsNoLineBreakExpansionTag(src: Element): boolean {
+			if (!src) return false;
+			return illa.ArrayUtil.indexOf(this.noLineBreakExpansionTags, src.name) > -1 || this.checkIsNoLineBreakExpansionTag(src.parent);
+		}
+
 		protected checkIsNonReplaceableCharacterTag(src: Element): boolean {
 			if (!src) return false;
-			return illa.ArrayUtil.indexOf(this.nonReplaceableCharacterTags, src.name) > -1;
+			return illa.ArrayUtil.indexOf(this.nonReplaceableCharacterTags, src.name) > -1 || this.checkIsNonReplaceableCharacterTag(src.parent);
 		}
-		
+
 		protected checkIsInlineDependingOnContent(src: Element): boolean {
 			if (!src) return false;
 			return illa.ArrayUtil.indexOf(this.inlineDependingOnContentTags, src.name) > -1;
 		}
-		
+
 		protected checkIsBlock(src: Element): boolean {
 			if (!src) return false;
 			switch (src.name.charAt(0)) {
@@ -202,7 +234,7 @@ module pml {
 				return illa.ArrayUtil.indexOf(this.inlineTags, src.name) == -1;
 			}
 		}
-		
+
 		protected checkHasBlockContent(src: Element): boolean {
 			if (src && src.children) {
 				for (var i = 0, n = src.children.length; i < n; i++) {
@@ -214,13 +246,101 @@ module pml {
 			}
 			return false;
 		}
-		
+
 		getNoEndTags(): string[] {
 			return this.noEndTags;
 		}
-		
+
 		setNoEndTags(v: string[]): void {
 			this.noEndTags = v;
+		}
+
+		getInlineTags(): string[] {
+			return this.inlineTags;
+		}
+
+		setInlineTags(v: string[]): void {
+			this.inlineTags = v;
+		}
+
+		getInlineDependingOnContentTags(): string[] {
+			return this.inlineDependingOnContentTags;
+		}
+
+		setInlineDependingOnContentTags(v: string[]): void {
+			this.inlineDependingOnContentTags = v;
+		}
+
+		getNonReplaceableCharacterTags(): string[] {
+			return this.nonReplaceableCharacterTags;
+		}
+
+		setNonReplaceableCharacterTags(v: string[]): void {
+			this.nonReplaceableCharacterTags = v;
+		}
+
+		getPrettyPrint(): boolean {
+			return this.prettyPrint;
+		}
+
+		setPrettyPrint(v: boolean): void {
+			this.prettyPrint = v;
+		}
+
+		getIndentChar(): string {
+			return this.indentChar;
+		}
+
+		setIndentChar(v: string): void {
+			this.indentChar = v;
+		}
+
+		getEolChar(): string {
+			return this.eolChar;
+		}
+
+		setEolChar(v: string): void {
+			this.eolChar = v;
+		}
+
+		getTabChar(): string {
+			return this.tabChar;
+		}
+
+		setTabChar(v: string): void {
+			this.tabChar = v;
+		}
+		
+		getExpandLineBreaks(): boolean {
+			return this.expandLineBreaks;
+		}
+		
+		setExpandLineBreaks(v: boolean): void {
+			this.expandLineBreaks = v;
+		}
+		
+		getExpandTabs(): boolean {
+			return this.expandTabs;
+		}
+		
+		setExpandTabs(v: boolean): void {
+			this.expandTabs = v;
+		}
+		
+		getPreformattedTags(): string[] {
+			return this.preformattedTags;
+		}
+		
+		setPreformattedTags(v: string[]): void {
+			this.preformattedTags = v;
+		}
+		
+		getNoLineBreakExpansionTags(): string[] {
+			return this.noLineBreakExpansionTags;
+		}
+		
+		setNoLineBreakExpansionTags(v: string[]): void {
+			this.noLineBreakExpansionTags = v;
 		}
 	}
 }

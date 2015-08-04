@@ -1,9 +1,9 @@
 «◄•►»
 ◄!DOCTYPE•
 	◄@html•►
-	◄@PUBLIC•►
+	«◄@PUBLIC•►
 	◄@•-//W3C//DTD HTML 4.01//EN►
-	◄@•http://www.w3.org/TR/html4/strict.dtd►
+	◄@•http://www.w3.org/TR/html4/strict.dtd►»
 ►
 ◄html•
 	◄@lang•en►
@@ -11,7 +11,13 @@
 		◄meta•
 			◄@charset•UTF-8►
 		►
-		◄title•PML test►
+		◄title•PML 
+test►
+		◄!--•[if IE 8]>
+<script>
+	var isIe8 = true;
+</script>
+<![endif]►
 		◄script•
 			window.onload = function() {
 				alert('<Java&Script> here ~ howdy?');
@@ -26,14 +32,14 @@
 	►
 	◄body•
 		◄h1•
-			◄@class•main-title►
+			«◄@class•«main-title»►»
 			◄abbr•
 				◄@title•HyperText Markup Language►
 				◄•HTML►
 			►
-			◄• output test►
+			◄• output
+test►
 		►
-		◄p•Some sample HTML tags:►
 		◄pre•
 			◄code•<table border="1">
 	<tr>
