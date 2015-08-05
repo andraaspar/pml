@@ -31,6 +31,7 @@ test►
 		►
 	►
 	◄«solid-»body•
+		◄div►
 		◄h1•
 			«◄@class•«main-title»►»
 			◄abbr•
@@ -50,7 +51,7 @@ test►
 		<td>Cell 4</td><td>Cell 5</td><td>Cell 6</td>
 	</tr>
 </table>►
-		►
+		►►►»◄div
 		◄p•This would« quite
 probably» render as:►
 		◄table•

@@ -64,6 +64,10 @@ module pml {
 			var tagStart = this.getTagStart();
 			var tagEnd = this.getTagEnd();
 			var valueDelimiter = this.getValueDelimiter();
+			
+			if (this.tagLevel == 0 && this.charId == 0) {
+				this.hasChildren[this.tagLevel] = this.checkAheadForChildren(src);
+			}
 
 			for (var n = src.length; this.charId < n; this.charId++) {
 				var char = src.charAt(this.charId);
@@ -72,7 +76,6 @@ module pml {
 
 					if (this.inIgnoredValue) {
 						result = this.endIgnoredValueConversion(result);
-						this.inIgnoredValue = false;
 					}
 
 					this.commentLevel++;
@@ -130,24 +133,12 @@ module pml {
 
 						if (this.inIgnoredValue) {
 							result = this.endIgnoredValueConversion(result);
-							this.inIgnoredValue = false;
 						}
 						this.hasChildren[this.tagLevel] = true;
 						if (this.inKey) {
+							result = result.replace(/[\s\n]+$/g, '');
+							this.addTidyMessage(MessageKind.WARNING, result, 'Added missing value delimiter.');
 							result += valueDelimiter;
-						} else {
-							if (this.valueBuffer) {
-								this.valueBuffer = this.valueBuffer.replace(/^[\s\n]+|[\s\n]+$/g, '');
-								if (this.valueBuffer) {
-									result += '\n' + this.getIndent(this.tagLevel);
-									if (this.convertIgnoredValueToTag) {
-										result += tagStart + valueDelimiter + this.valueBuffer + tagEnd;
-									} else {
-										result += commentStart + this.valueBuffer + commentEnd;
-									}
-									this.valueBuffer = '';
-								}
-							}
 						}
 						this.inKey = true;
 						result += '\n' + this.getIndent(this.tagLevel);
@@ -164,10 +155,10 @@ module pml {
 					} else if (char == tagEnd) {
 
 						if (this.inKey) {
+							this.addTidyMessage(MessageKind.WARNING, result, 'Added missing value delimiter.');
 							result += valueDelimiter;
 						} else if (this.inIgnoredValue) {
 							result = this.endIgnoredValueConversion(result);
-							this.inIgnoredValue = false;
 						}
 						if (this.hasChildren[this.tagLevel]) {
 							result += '\n' + this.getIndent(this.tagLevel - 1);
@@ -254,6 +245,7 @@ module pml {
 			} else {
 				result += this.getCommentEnd();
 			}
+			this.inIgnoredValue = false;
 			return result;
 		}
 

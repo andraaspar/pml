@@ -47,7 +47,13 @@ module test1 {
 			
 			var tidy = new pml.Tidy();
 			tidy.setConvertIgnoredValueToTag(true);
-			illa.Log.info(tidy.tidy(data));
+			var tidyData = tidy.tidy(data);
+			illa.Log.info(tidyData);
+			
+			var linter = new pml.Linter();
+			linter.setThrowOnError(false);
+			linter.lint(tidyData);
+			illa.Log.info(linter.getMessageKindCount(pml.MessageKind.ERROR) + ' errors, ' + linter.getMessageKindCount(pml.MessageKind.WARNING) + ' warnings.');
 		}
 	}
 }
