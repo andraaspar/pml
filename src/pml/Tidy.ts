@@ -49,12 +49,7 @@ module pml {
 				if (char == commentStart) {
 
 					if (inIgnoredValue) {
-						result = result.replace(/[\s\n]+$/g, '');
-						if (this.convertIgnoredValueToTag) {
-							result += tagEnd;
-						} else {
-							result += commentEnd;
-						}
+						result = this.endIgnoredValueConversion(result);
 						inIgnoredValue = false;
 					}
 
@@ -110,12 +105,7 @@ module pml {
 					if (char == tagStart) {
 
 						if (inIgnoredValue) {
-							result = result.replace(/[\s\n]+$/g, '');
-							if (this.convertIgnoredValueToTag) {
-								result += tagEnd;
-							} else {
-								result += commentEnd;
-							}
+							result = this.endIgnoredValueConversion(result);
 							inIgnoredValue = false;
 						}
 						hasChildren[tagLevel] = true;
@@ -152,12 +142,7 @@ module pml {
 						if (inKey) {
 							result += valueDelimiter;
 						} else if (inIgnoredValue) {
-							result = result.replace(/[\s\n]+$/g, '');
-							if (this.convertIgnoredValueToTag) {
-								result += tagEnd;
-							} else {
-								result += commentEnd;
-							}
+							result = this.endIgnoredValueConversion(result);
 							inIgnoredValue = false;
 						}
 						if (hasChildren[tagLevel]) {
@@ -217,6 +202,16 @@ module pml {
 
 			}
 
+			return result;
+		}
+		
+		protected endIgnoredValueConversion(result: string): string {
+			result = result.replace(/[\s\n]+$/g, '');
+			if (this.convertIgnoredValueToTag) {
+				result += this.getTagEnd();
+			} else {
+				result += this.getCommentEnd();
+			}
 			return result;
 		}
 
