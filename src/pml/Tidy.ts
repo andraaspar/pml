@@ -1,20 +1,14 @@
-
+/// <reference path='ReaderBase.ts'/>
 
 module pml {
-	export class Tidy {
-
-		private commentStart: string;
-		private tagStart: string;
-		private valueDelimiter: string;
-		private tagEnd: string;
-		private commentEnd: string;
+	export class Tidy extends ReaderBase {
 
 		private indentChar: string = '\t';
 		private eolChar: string = '\n';
 		private convertIgnoredValueToTag: boolean = false;
 
 		constructor() {
-
+			super();
 		}
 
 		tidy(src: string): string {
@@ -32,31 +26,6 @@ module pml {
 			return src;
 		}
 
-		protected readDelimiters(src: string): void {
-			this.commentStart = src.slice(0, 1);
-			this.tagStart = src.slice(1, 2);
-			this.valueDelimiter = src.slice(2, 3);
-			this.tagEnd = src.slice(3, 4);
-			this.commentEnd = src.slice(4, 5);
-		}
-
-		protected checkDelimiters(): void {
-			var delimiters = [this.commentStart, this.tagStart, this.valueDelimiter, this.tagEnd, this.commentEnd];
-			var names = ['Comment start', 'Tag start', 'Value', 'Tag end', 'Comment end'];
-			for (var i = 0, n = delimiters.length; i < n; i++) {
-				if (!delimiters[i]) {
-					throw names[i] + ' delimiter is missing.';
-				}
-				if (/[\s\r\n]/.test(delimiters[i])) {
-					throw names[i] + ' delimiter is a whitespace or line break character. Tidy does not support this.';
-				}
-				var i2 = illa.ArrayUtil.indexOf(delimiters, delimiters[i], i + 1);
-				if (i2 > -1) {
-					throw names[i] + ' delimiter clashes with ' + names[i2] + ' delimiter.';
-				}
-			}
-		}
-
 		protected tidyLoop(src: string): string {
 			var result = '';
 
@@ -67,18 +36,24 @@ module pml {
 			var tagLevel = 0;
 			var inKey = false;
 			var inIgnoredValue = false;
+			
+			var commentStart = this.getCommentStart();
+			var commentEnd = this.getCommentEnd();
+			var tagStart = this.getTagStart();
+			var tagEnd = this.getTagEnd();
+			var valueDelimiter = this.getValueDelimiter();
 
 			for (var i = 0, n = src.length; i < n; i++) {
 				var char = src.charAt(i);
 
-				if (char == this.commentStart) {
+				if (char == commentStart) {
 
 					if (inIgnoredValue) {
 						result = result.replace(/[\s\n]+$/g, '');
 						if (this.convertIgnoredValueToTag) {
-							result += this.tagEnd;
+							result += tagEnd;
 						} else {
-							result += this.commentEnd;
+							result += commentEnd;
 						}
 						inIgnoredValue = false;
 					}
@@ -102,7 +77,7 @@ module pml {
 						}
 					}
 
-				} else if (char == this.commentEnd) {
+				} else if (char == commentEnd) {
 
 					if (commentLevel > 0) {
 						// Ignore invalid comment end delimiters
@@ -132,29 +107,29 @@ module pml {
 					}
 
 				} else {
-					if (char == this.tagStart) {
+					if (char == tagStart) {
 
 						if (inIgnoredValue) {
 							result = result.replace(/[\s\n]+$/g, '');
 							if (this.convertIgnoredValueToTag) {
-								result += this.tagEnd;
+								result += tagEnd;
 							} else {
-								result += this.commentEnd;
+								result += commentEnd;
 							}
 							inIgnoredValue = false;
 						}
 						hasChildren[tagLevel] = true;
 						if (inKey) {
-							result += this.valueDelimiter;
+							result += valueDelimiter;
 						} else {
 							if (valueBuffer) {
 								valueBuffer = valueBuffer.replace(/^[\s\n]+|[\s\n]+$/g, '');
 								if (valueBuffer) {
 									result += '\n' + this.getIndent(tagLevel);
 									if (this.convertIgnoredValueToTag) {
-										result += this.tagStart + this.valueDelimiter + valueBuffer + this.tagEnd;
+										result += tagStart + valueDelimiter + valueBuffer + tagEnd;
 									} else {
-										result += this.commentStart + valueBuffer + this.commentEnd;
+										result += commentStart + valueBuffer + commentEnd;
 									}
 									valueBuffer = '';
 								}
@@ -167,21 +142,21 @@ module pml {
 
 						hasChildren[tagLevel] = this.checkAheadForChildren(src, i + 1);
 
-					} else if (char == this.valueDelimiter) {
+					} else if (char == valueDelimiter) {
 
 						inKey = false;
 						result += char;
 
-					} else if (char == this.tagEnd) {
+					} else if (char == tagEnd) {
 
 						if (inKey) {
-							result += this.valueDelimiter;
+							result += valueDelimiter;
 						} else if (inIgnoredValue) {
 							result = result.replace(/[\s\n]+$/g, '');
 							if (this.convertIgnoredValueToTag) {
-								result += this.tagEnd;
+								result += tagEnd;
 							} else {
-								result += this.commentEnd;
+								result += commentEnd;
 							}
 							inIgnoredValue = false;
 						}
@@ -222,9 +197,9 @@ module pml {
 									inKey = false;
 									result += '\n' + this.getIndent(tagLevel);
 									if (this.convertIgnoredValueToTag) {
-										result += this.tagStart + this.valueDelimiter;
+										result += tagStart + valueDelimiter;
 									} else {
-										result += this.commentStart;
+										result += commentStart;
 									}
 									result += char;
 								}
@@ -257,26 +232,31 @@ module pml {
 			var result = false;
 
 			var commentLevel = 0;
+			
+			var commentStart = this.getCommentStart();
+			var commentEnd = this.getCommentEnd();
+			var tagStart = this.getTagStart();
+			var tagEnd = this.getTagEnd();
 
 			for (var n = src.length; i < n; i++) {
 				var char = src.charAt(i);
 
-				if (char == this.commentStart) {
+				if (char == commentStart) {
 
 					commentLevel++;
 
-				} else if (char == this.commentEnd) {
+				} else if (char == commentEnd) {
 
 					commentLevel--;
 
 				} else if (commentLevel <= 0) {
 
-					if (char == this.tagStart) {
+					if (char == tagStart) {
 
 						result = true;
 						break;
 
-					} else if (char == this.tagEnd) {
+					} else if (char == tagEnd) {
 
 						result = false;
 						break;
@@ -309,26 +289,6 @@ module pml {
 		
 		setEolChar(v: string): void {
 			this.eolChar = v;
-		}
-		
-		getCommentStart(): string {
-			return this.commentStart;
-		}
-		
-		getTagStart(): string {
-			return this.tagStart;
-		}
-		
-		getValueDelimiter(): string {
-			return this.valueDelimiter;
-		}
-		
-		getTagEnd(): string {
-			return this.tagEnd;
-		}
-		
-		getCommentEnd(): string {
-			return this.commentEnd;
 		}
 	}
 }

@@ -1,48 +1,41 @@
 /// <reference path='Element.ts'/>
 /// <reference path='Linter.ts'/>
+/// <reference path='ReaderBase.ts'/>
 
 module pml {
-	export class Parser {
+	export class Parser extends ReaderBase {
 		
-		private commentStart: string;
-		private tagStart: string;
-		private valueDelimiter: string;
-		private tagEnd: string;
-		private commentEnd: string;
+		private source: string;
 		
 		private linter: Linter;
 		private doesLint: boolean = true;
 		
 		constructor() {
+			super();
 			this.linter = new Linter();
 			this.linter.setThrowOnError(true);
 			this.linter.setLogMessages(true);
 		}
 		
 		parse(src: string): Element {
-			this.linter.lint(src);
+			this.source = src;
 			
-			this.readDelimiters(src);
-			var commentlessSrc = this.removeComments(src);
-			return this.readElements(commentlessSrc);
-		}
-		
-		protected readDelimiters(src: string): void {
-			this.commentStart = src.slice(0, 1);
-			this.tagStart = src.slice(1, 2);
-			this.valueDelimiter = src.slice(2, 3);
-			this.tagEnd = src.slice(3, 4);
-			this.commentEnd = src.slice(4, 5);
+			this.linter.lint(this.source);
+			// If it did not throw, we can proceed.
+			
+			this.readDelimiters(this.source);
+			var commentlessSource = this.removeComments(this.source);
+			return this.readElements(commentlessSource);
 		}
 		
 		protected removeComments(src: string): string {
-			var commentSplit = src.split(this.commentStart);
+			var commentSplit = src.split(this.getCommentStart());
 			var commentlessSrc = commentSplit[0];
 			var commentDepth = 0;
 			
 			for (var i = 1, n = commentSplit.length; i < n; i++) {
 				commentDepth++;
-				var sectionSplit = commentSplit[i].split(this.commentEnd);
+				var sectionSplit = commentSplit[i].split(this.getCommentEnd());
 				commentDepth -= sectionSplit.length - 1;
 				if (commentDepth == 0) {
 					commentlessSrc += sectionSplit[sectionSplit.length - 1];
@@ -57,13 +50,13 @@ module pml {
 			rootElement.name = '';
 			rootElement.children = [];
 			
-			var splitSrc = src.split(this.tagStart);
+			var splitSrc = src.split(this.getTagStart());
 			var parentElement = rootElement;
 			var previousElement: Element;
 			
 			for (var i = 1, n = splitSrc.length; i < n; i++) {
 				var element = new Element();
-				var tailSplit = splitSrc[i].split(this.tagEnd);
+				var tailSplit = splitSrc[i].split(this.getTagEnd());
 				var hasChildren = tailSplit.length == 1;
 				var parentsClosed = tailSplit.length - 2;
 				this.readTagContent(element, tailSplit[0], hasChildren);
@@ -91,7 +84,7 @@ module pml {
 		}
 		
 		protected readTagContent(element: Element, src: string, hasChildren: boolean): void {
-			var contentSplit = src.split(this.valueDelimiter);
+			var contentSplit = src.split(this.getValueDelimiter());
 			element.name = contentSplit[0];
 			if (!hasChildren) {
 				element.value = contentSplit[1] || '';
@@ -108,26 +101,6 @@ module pml {
 		
 		getLinter(): Linter {
 			return this.linter;
-		}
-		
-		getCommentStart(): string {
-			return this.commentStart;
-		}
-		
-		getTagStart(): string {
-			return this.tagStart;
-		}
-		
-		getValueDelimiter(): string {
-			return this.valueDelimiter;
-		}
-		
-		getTagEnd(): string {
-			return this.tagEnd;
-		}
-		
-		getCommentEnd(): string {
-			return this.commentEnd;
 		}
 	}
 }

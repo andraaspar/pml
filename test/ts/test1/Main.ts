@@ -30,7 +30,7 @@ module test1 {
 			parser.getLinter().setThrowOnError(false);
 
 			var root = parser.parse(data);
-			illa.Log.info(parser.getLinter().getErrors().length + ' errors, ' + parser.getLinter().getWarnings().length + ' warnings.');
+			illa.Log.info(parser.getLinter().getMessageKindCount(pml.MessageKind.ERROR) + ' errors, ' + parser.getLinter().getMessageKindCount(pml.MessageKind.WARNING) + ' warnings.');
 
 			var stringer = new pml.Stringer(['«»', '◄►'], ['•']);
 			illa.Log.info(stringer.stringify(root));
