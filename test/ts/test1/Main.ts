@@ -3,7 +3,7 @@
 /// <reference path='../../../src/pml/HtmlStringer.ts'/>
 /// <reference path='../../../src/pml/Parser.ts'/>
 /// <reference path='../../../src/pml/Stringer.ts'/>
-/// <reference path='../../../src/pml/Tidy.ts'/>
+/// <reference path='../../../src/pml/Tidier.ts'/>
 
 module test1 {
 	export class Main {
@@ -45,9 +45,9 @@ module test1 {
 			var iframe = jQuery('<iframe>').appendTo('body');
 			(<HTMLIFrameElement>iframe.get(0)).src = 'data:text/html;charset=utf-8,' + htmlOut;
 			
-			var tidy = new pml.Tidy();
-			tidy.setConvertIgnoredValueToTag(true);
-			var tidyData = tidy.tidy(data);
+			var tidier = new pml.Tidier();
+			tidier.setConvertIgnoredValueToTag(true);
+			var tidyData = tidier.tidy(data);
 			illa.Log.info(tidyData);
 			
 			var linter = new pml.Linter();

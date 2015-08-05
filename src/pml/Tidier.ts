@@ -1,7 +1,7 @@
 /// <reference path='ReaderBase.ts'/>
 
 module pml {
-	export class Tidy extends ReaderBase {
+	export class Tidier extends ReaderBase {
 
 		private indentChar: string = '\t';
 		private eolChar: string = '\n';
