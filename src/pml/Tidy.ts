@@ -6,6 +6,14 @@ module pml {
 		private indentChar: string = '\t';
 		private eolChar: string = '\n';
 		private convertIgnoredValueToTag: boolean = false;
+		
+		private charId: number;
+		private valueBuffer = '';
+		private hasChildren: boolean[] = [];
+		private commentLevel = 0;
+		private tagLevel = 0;
+		private inKey = false;
+		private inIgnoredValue = false;
 
 		constructor() {
 			super();
@@ -17,25 +25,39 @@ module pml {
 			
 			// Normalize line ends
 			src = src.replace(/\r\n|\r|\n/g, '\n');
+			
+			this.charId = 0;
+			this.valueBuffer = '';
+			this.hasChildren = [];
+			this.commentLevel = 0;
+			this.tagLevel = 0;
+			this.inKey = false;
+			this.inIgnoredValue = false;
 
-			src = this.tidyLoop(src);
+			var result = this.tidyLoop(src);
+			
+			if (this.commentLevel > 0) {
+				this.addTidyMessage(MessageKind.WARNING, result, 'Added ' + this.commentLevel + ' missing comment end delimiter(s).');
+				for (var i = 0; i < this.commentLevel; i++) {
+					src += this.getCommentEnd();
+				}
+				result = this.tidyLoop(src, result);
+			}
+			if (this.tagLevel > 0) {
+				this.addTidyMessage(MessageKind.WARNING, result, 'Added ' + this.tagLevel + ' missing tag end delimiter(s).');
+				for (var i = 0; i < this.tagLevel; i++) {
+					src += this.getTagEnd();
+				}
+				result = this.tidyLoop(src, result);
+			}
 			
 			// Set EOL
-			src = src.replace('\n', this.eolChar);
+			result = result.replace('\n', this.eolChar);
 
-			return src;
+			return result;
 		}
 
-		protected tidyLoop(src: string): string {
-			var result = '';
-
-			var valueBuffer = '';
-			var tagBuffer: string[] = [];
-			var hasChildren: boolean[] = [];
-			var commentLevel = 0;
-			var tagLevel = 0;
-			var inKey = false;
-			var inIgnoredValue = false;
+		protected tidyLoop(src: string, result: string = ''): string {
 			
 			var commentStart = this.getCommentStart();
 			var commentEnd = this.getCommentEnd();
@@ -43,30 +65,30 @@ module pml {
 			var tagEnd = this.getTagEnd();
 			var valueDelimiter = this.getValueDelimiter();
 
-			for (var i = 0, n = src.length; i < n; i++) {
-				var char = src.charAt(i);
+			for (var n = src.length; this.charId < n; this.charId++) {
+				var char = src.charAt(this.charId);
 
 				if (char == commentStart) {
 
-					if (inIgnoredValue) {
+					if (this.inIgnoredValue) {
 						result = this.endIgnoredValueConversion(result);
-						inIgnoredValue = false;
+						this.inIgnoredValue = false;
 					}
 
-					commentLevel++;
-					if (commentLevel == 1) {
-						if (!inKey) {
-							if (hasChildren[tagLevel]) {
-								result += '\n' + this.getIndent(tagLevel);
+					this.commentLevel++;
+					if (this.commentLevel == 1) {
+						if (!this.inKey) {
+							if (this.hasChildren[this.tagLevel]) {
+								result += '\n' + this.getIndent(this.tagLevel);
 							}
 						}
 					}
-					if (hasChildren[tagLevel]) {
+					if (this.hasChildren[this.tagLevel]) {
 						result += char;
 					} else {
-						valueBuffer = valueBuffer.replace(/^[\s\n]+/g, '');
-						if (valueBuffer) {
-							valueBuffer += char;
+						this.valueBuffer = this.valueBuffer.replace(/^[\s\n]+/g, '');
+						if (this.valueBuffer) {
+							this.valueBuffer += char;
 						} else {
 							result += char;
 						}
@@ -74,28 +96,30 @@ module pml {
 
 				} else if (char == commentEnd) {
 
-					if (commentLevel > 0) {
+					if (this.commentLevel > 0) {
 						// Ignore invalid comment end delimiters
 						
-						commentLevel--;
-						if (hasChildren[tagLevel]) {
+						this.commentLevel--;
+						if (this.hasChildren[this.tagLevel]) {
 							result += char;
 						} else {
-							if (valueBuffer) {
-								valueBuffer += char;
+							if (this.valueBuffer) {
+								this.valueBuffer += char;
 							} else {
 								result += char;
 							}
 						}
+					} else {
+						this.addTidyMessage(MessageKind.WARNING, result, 'Invalid comment end delimiter removed.');
 					}
 
-				} else if (commentLevel > 0) {
+				} else if (this.commentLevel > 0) {
 
-					if (inKey) {
+					if (this.inKey) {
 						result += char;
 					} else {
-						if (valueBuffer) {
-							valueBuffer += char;
+						if (this.valueBuffer) {
+							this.valueBuffer += char;
 						} else {
 							result += char;
 						}
@@ -104,83 +128,87 @@ module pml {
 				} else {
 					if (char == tagStart) {
 
-						if (inIgnoredValue) {
+						if (this.inIgnoredValue) {
 							result = this.endIgnoredValueConversion(result);
-							inIgnoredValue = false;
+							this.inIgnoredValue = false;
 						}
-						hasChildren[tagLevel] = true;
-						if (inKey) {
+						this.hasChildren[this.tagLevel] = true;
+						if (this.inKey) {
 							result += valueDelimiter;
 						} else {
-							if (valueBuffer) {
-								valueBuffer = valueBuffer.replace(/^[\s\n]+|[\s\n]+$/g, '');
-								if (valueBuffer) {
-									result += '\n' + this.getIndent(tagLevel);
+							if (this.valueBuffer) {
+								this.valueBuffer = this.valueBuffer.replace(/^[\s\n]+|[\s\n]+$/g, '');
+								if (this.valueBuffer) {
+									result += '\n' + this.getIndent(this.tagLevel);
 									if (this.convertIgnoredValueToTag) {
-										result += tagStart + valueDelimiter + valueBuffer + tagEnd;
+										result += tagStart + valueDelimiter + this.valueBuffer + tagEnd;
 									} else {
-										result += commentStart + valueBuffer + commentEnd;
+										result += commentStart + this.valueBuffer + commentEnd;
 									}
-									valueBuffer = '';
+									this.valueBuffer = '';
 								}
 							}
 						}
-						inKey = true;
-						result += '\n' + this.getIndent(tagLevel);
+						this.inKey = true;
+						result += '\n' + this.getIndent(this.tagLevel);
 						result += char;
-						tagLevel++;
+						this.tagLevel++;
 
-						hasChildren[tagLevel] = this.checkAheadForChildren(src, i + 1);
+						this.hasChildren[this.tagLevel] = this.checkAheadForChildren(src);
 
 					} else if (char == valueDelimiter) {
 
-						inKey = false;
+						this.inKey = false;
 						result += char;
 
 					} else if (char == tagEnd) {
 
-						if (inKey) {
+						if (this.inKey) {
 							result += valueDelimiter;
-						} else if (inIgnoredValue) {
+						} else if (this.inIgnoredValue) {
 							result = this.endIgnoredValueConversion(result);
-							inIgnoredValue = false;
+							this.inIgnoredValue = false;
 						}
-						if (hasChildren[tagLevel]) {
-							result += '\n' + this.getIndent(tagLevel - 1);
+						if (this.hasChildren[this.tagLevel]) {
+							result += '\n' + this.getIndent(this.tagLevel - 1);
 						} else {
-							result += valueBuffer;
-							valueBuffer = '';
+							result += this.valueBuffer;
+							this.valueBuffer = '';
 						}
-						if (tagLevel) {
+						if (this.tagLevel) {
 							// Ignore invalid closing tag
 							result += char;
 
-							hasChildren[tagLevel] = false;
-							tagLevel--;
-							inKey = false;
+							this.hasChildren[this.tagLevel] = false;
+							this.tagLevel--;
+							this.inKey = false;
+						} else {
+							this.addTidyMessage(MessageKind.WARNING, result, 'Invalid tag end delimiter removed.');
 						}
 
 					} else {
 
 
-						if (inKey) {
+						if (this.inKey) {
 
 							result += char;
 
-						} else if (inIgnoredValue) {
+						} else if (this.inIgnoredValue) {
 
 							result += char;
 
 						} else {
 
-							if (hasChildren[tagLevel]) {
+							if (this.hasChildren[this.tagLevel]) {
 
 								if (/\s/.test(char)) {
 									// Ignore white space
 								} else {
-									inIgnoredValue = true;
-									inKey = false;
-									result += '\n' + this.getIndent(tagLevel);
+									this.inIgnoredValue = true;
+									this.inKey = false;
+									result += '\n' + this.getIndent(this.tagLevel);
+									this.addTidyMessage(MessageKind.WARNING, result,
+										'Ignored value found and converted to a ' + (this.convertIgnoredValueToTag ? 'tag' : 'comment') + '.');
 									if (this.convertIgnoredValueToTag) {
 										result += tagStart + valueDelimiter;
 									} else {
@@ -191,7 +219,7 @@ module pml {
 
 							} else {
 
-								valueBuffer += char;
+								this.valueBuffer += char;
 
 							}
 
@@ -201,8 +229,22 @@ module pml {
 				}
 
 			}
-
+			
 			return result;
+		}
+		
+		protected addTidyMessage(kind: MessageKind, result: string, message: string): void {
+			var lineNo = 1;
+			var charNo = 1;
+			var lineBreaks = result.match(/\n/g);
+			if (lineBreaks) {
+				lineNo = lineBreaks.length + 1;
+			}
+			var lastLineChars = (/\n(.*?)$/g).exec(result);
+			if (lastLineChars) {
+				charNo = lastLineChars[0].length;
+			}
+			this.addMessage(new Message(kind, lineNo, charNo, message));
 		}
 		
 		protected endIgnoredValueConversion(result: string): string {
@@ -223,7 +265,7 @@ module pml {
 			return result;
 		}
 
-		protected checkAheadForChildren(src: string, i: number): boolean {
+		protected checkAheadForChildren(src: string): boolean {
 			var result = false;
 
 			var commentLevel = 0;
@@ -233,7 +275,7 @@ module pml {
 			var tagStart = this.getTagStart();
 			var tagEnd = this.getTagEnd();
 
-			for (var n = src.length; i < n; i++) {
+			for (var i = this.charId + 1, n = src.length; i < n; i++) {
 				var char = src.charAt(i);
 
 				if (char == commentStart) {

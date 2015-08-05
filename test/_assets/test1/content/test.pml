@@ -87,6 +87,4 @@ probably» render as:►
 			►
 			◄li•No tool support for checking HTML validity at editing time.►
 			◄li•Files are larger when abusing obscure Unicode characters in UTF-8.►
-		►
-	►
-►
+		«foo
