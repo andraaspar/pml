@@ -1,7 +1,7 @@
 /// <reference path='../../lib/illa/ArrayUtil.ts'/>
 /// <reference path='../../lib/illa/StringUtil.ts'/>
 
-/// <reference path='Element.ts'/>
+/// <reference path='Pair.ts'/>
 
 module pml {
 	export class HtmlStringer {
@@ -82,7 +82,7 @@ module pml {
 
 		}
 
-		stringify(src: Element, level = -1): string {
+		stringify(src: Pair, level = -1): string {
 			var result = '';
 			
 			var indent = '';
@@ -182,7 +182,7 @@ module pml {
 			return result;
 		}
 
-		protected prepareText(src: Element, indent: string): string {
+		protected prepareText(src: Pair, indent: string): string {
 			var result = src.value || '';
 			if (!this.checkIsNonReplaceableCharacterTag(src)) {
 				result = illa.StringUtil.escapeHTML(result);
@@ -200,27 +200,27 @@ module pml {
 			return result;
 		}
 
-		protected checkIsPreformattedTag(src: Element): boolean {
+		protected checkIsPreformattedTag(src: Pair): boolean {
 			if (!src) return false;
 			return illa.ArrayUtil.indexOf(this.preformattedTags, src.name) > -1 || this.checkIsPreformattedTag(src.parent);
 		}
 
-		protected checkIsNoLineBreakExpansionTag(src: Element): boolean {
+		protected checkIsNoLineBreakExpansionTag(src: Pair): boolean {
 			if (!src) return false;
 			return illa.ArrayUtil.indexOf(this.noLineBreakExpansionTags, src.name) > -1 || this.checkIsNoLineBreakExpansionTag(src.parent);
 		}
 
-		protected checkIsNonReplaceableCharacterTag(src: Element): boolean {
+		protected checkIsNonReplaceableCharacterTag(src: Pair): boolean {
 			if (!src) return false;
 			return illa.ArrayUtil.indexOf(this.nonReplaceableCharacterTags, src.name) > -1 || this.checkIsNonReplaceableCharacterTag(src.parent);
 		}
 
-		protected checkIsInlineDependingOnContent(src: Element): boolean {
+		protected checkIsInlineDependingOnContent(src: Pair): boolean {
 			if (!src) return false;
 			return illa.ArrayUtil.indexOf(this.inlineDependingOnContentTags, src.name) > -1;
 		}
 
-		protected checkIsBlock(src: Element): boolean {
+		protected checkIsBlock(src: Pair): boolean {
 			if (!src) return false;
 			switch (src.name.charAt(0)) {
 				case '':
@@ -236,7 +236,7 @@ module pml {
 			}
 		}
 
-		protected checkHasBlockContent(src: Element): boolean {
+		protected checkHasBlockContent(src: Pair): boolean {
 			if (src && src.children) {
 				for (var i = 0, n = src.children.length; i < n; i++) {
 					var child = src.children[i];

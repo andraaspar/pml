@@ -6,9 +6,9 @@ module pml {
 	export class ReaderBase {
 		
 		private commentStart: string;
-		private tagStart: string;
-		private valueDelimiter: string;
-		private tagEnd: string;
+		private keyStart: string;
+		private valueStart: string;
+		private valueEnd: string;
 		private commentEnd: string;
 
 		private messages: Message[] = [];
@@ -21,9 +21,9 @@ module pml {
 		
 		protected readDelimiters(source: string): void {
 			this.commentStart = source.slice(0, 1);
-			this.tagStart = source.slice(1, 2);
-			this.valueDelimiter = source.slice(2, 3);
-			this.tagEnd = source.slice(3, 4);
+			this.keyStart = source.slice(1, 2);
+			this.valueStart = source.slice(2, 3);
+			this.valueEnd = source.slice(3, 4);
 			this.commentEnd = source.slice(4, 5);
 			
 			this.checkDelimiters();
@@ -31,7 +31,7 @@ module pml {
 
 		protected checkDelimiters(): void {
 			var delimiters = this.getDelimiters();
-			var names = ['Comment start', 'Tag start', 'Value', 'Tag end', 'Comment end'];
+			var names = ['Comment start', 'Key start', 'Value start', 'Value end', 'Comment end'];
 			for (var i = 0, n = delimiters.length; i < n; i++) {
 				if (!delimiters[i]) {
 					this.addMessage(new Message(MessageKind.ERROR, 0, i, names[i] + ' delimiter is missing.'));
@@ -50,16 +50,16 @@ module pml {
 			return this.commentStart;
 		}
 		
-		getTagStart(): string {
-			return this.tagStart;
+		getKeyStart(): string {
+			return this.keyStart;
 		}
 		
-		getValueDelimiter(): string {
-			return this.valueDelimiter;
+		getValueStart(): string {
+			return this.valueStart;
 		}
 		
-		getTagEnd(): string {
-			return this.tagEnd;
+		getValueEnd(): string {
+			return this.valueEnd;
 		}
 		
 		getCommentEnd(): string {
@@ -117,7 +117,7 @@ module pml {
 		}
 		
 		getDelimiters(): string[] {
-			return [this.commentStart, this.tagStart, this.valueDelimiter, this.tagEnd, this.commentEnd];
+			return [this.commentStart, this.keyStart, this.valueStart, this.valueEnd, this.commentEnd];
 		}
 		
 		getThrowOnError(): boolean {

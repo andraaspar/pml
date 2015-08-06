@@ -1,4 +1,4 @@
-/// <reference path='Element.ts'/>
+/// <reference path='Pair.ts'/>
 /// <reference path='Linter.ts'/>
 /// <reference path='ReaderBase.ts'/>
 
@@ -17,7 +17,7 @@ module pml {
 			this.linter.setLogMessages(true);
 		}
 		
-		parse(src: string): Element {
+		parse(src: string): Pair {
 			this.source = src;
 			
 			this.linter.lint(this.source);
@@ -25,7 +25,7 @@ module pml {
 			
 			this.readDelimiters(this.source);
 			var commentlessSource = this.removeComments(this.source);
-			return this.readElements(commentlessSource);
+			return this.readPairs(commentlessSource);
 		}
 		
 		protected removeComments(src: string): string {
@@ -45,49 +45,49 @@ module pml {
 			return commentlessSrc;
 		}
 		
-		protected readElements(src: string): Element {
-			var rootElement = new Element();
-			rootElement.name = '';
-			rootElement.children = [];
+		protected readPairs(src: string): Pair {
+			var rootPair = new Pair();
+			rootPair.name = '';
+			rootPair.children = [];
 			
-			var splitSrc = src.split(this.getTagStart());
-			var parentElement = rootElement;
-			var previousElement: Element;
+			var splitSrc = src.split(this.getKeyStart());
+			var parentPair = rootPair;
+			var previousPair: Pair;
 			
 			for (var i = 1, n = splitSrc.length; i < n; i++) {
-				var element = new Element();
-				var tailSplit = splitSrc[i].split(this.getTagEnd());
+				var pair = new Pair();
+				var tailSplit = splitSrc[i].split(this.getValueEnd());
 				var hasChildren = tailSplit.length == 1;
 				var parentsClosed = tailSplit.length - 2;
-				this.readTagContent(element, tailSplit[0], hasChildren);
-				parentElement.children.push(element);
-				element.parent = parentElement;
-				if (previousElement) {
-					previousElement.nextSibling = element;
-					element.previousSibling = previousElement;
+				this.readPairContent(pair, tailSplit[0], hasChildren);
+				parentPair.children.push(pair);
+				pair.parent = parentPair;
+				if (previousPair) {
+					previousPair.nextSibling = pair;
+					pair.previousSibling = previousPair;
 				}
-				previousElement = element;
+				previousPair = pair;
 				if (hasChildren) {
-					element.children = [];
-					parentElement = element;
-					previousElement = null;
+					pair.children = [];
+					parentPair = pair;
+					previousPair = null;
 				} else {
 					while (parentsClosed) {
-						previousElement = parentElement;
-						parentElement = parentElement.parent;
+						previousPair = parentPair;
+						parentPair = parentPair.parent;
 						parentsClosed--;
 					}
 				}
 			}
 			
-			return rootElement;
+			return rootPair;
 		}
 		
-		protected readTagContent(element: Element, src: string, hasChildren: boolean): void {
-			var contentSplit = src.split(this.getValueDelimiter());
-			element.name = contentSplit[0];
+		protected readPairContent(pair: Pair, src: string, hasChildren: boolean): void {
+			var contentSplit = src.split(this.getValueStart());
+			pair.name = contentSplit[0];
 			if (!hasChildren) {
-				element.value = contentSplit[1] || '';
+				pair.value = contentSplit[1] || '';
 			}
 		}
 		

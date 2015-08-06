@@ -5,13 +5,13 @@ module pml {
 
 		private indentChar: string = '\t';
 		private eolChar: string = '\n';
-		private convertIgnoredValueToTag: boolean = false;
+		private convertIgnoredValueToPair: boolean = false;
 		
 		private charId: number;
 		private valueBuffer = '';
 		private hasChildren: boolean[] = [];
 		private commentLevel = 0;
-		private tagLevel = 0;
+		private level = 0;
 		private inKey = false;
 		private inIgnoredValue = false;
 
@@ -30,7 +30,7 @@ module pml {
 			this.valueBuffer = '';
 			this.hasChildren = [];
 			this.commentLevel = 0;
-			this.tagLevel = 0;
+			this.level = 0;
 			this.inKey = false;
 			this.inIgnoredValue = false;
 
@@ -43,10 +43,10 @@ module pml {
 				}
 				result = this.tidyLoop(src, result);
 			}
-			if (this.tagLevel > 0) {
-				this.addTidyMessage(MessageKind.WARNING, result, 'Added ' + this.tagLevel + ' missing tag end delimiter(s).');
-				for (var i = 0; i < this.tagLevel; i++) {
-					src += this.getTagEnd();
+			if (this.level > 0) {
+				this.addTidyMessage(MessageKind.WARNING, result, 'Added ' + this.level + ' missing value end delimiter(s).');
+				for (var i = 0; i < this.level; i++) {
+					src += this.getValueEnd();
 				}
 				result = this.tidyLoop(src, result);
 			}
@@ -61,12 +61,12 @@ module pml {
 			
 			var commentStart = this.getCommentStart();
 			var commentEnd = this.getCommentEnd();
-			var tagStart = this.getTagStart();
-			var tagEnd = this.getTagEnd();
-			var valueDelimiter = this.getValueDelimiter();
+			var keyStart = this.getKeyStart();
+			var valueStart = this.getValueStart();
+			var valueEnd = this.getValueEnd();
 			
-			if (this.tagLevel == 0 && this.charId == 0) {
-				this.hasChildren[this.tagLevel] = this.checkAheadForChildren(src);
+			if (this.level == 0 && this.charId == 0) {
+				this.hasChildren[this.level] = this.checkAheadForChildren(src);
 			}
 
 			for (var n = src.length; this.charId < n; this.charId++) {
@@ -81,12 +81,12 @@ module pml {
 					this.commentLevel++;
 					if (this.commentLevel == 1) {
 						if (!this.inKey) {
-							if (this.hasChildren[this.tagLevel]) {
-								result += '\n' + this.getIndent(this.tagLevel);
+							if (this.hasChildren[this.level]) {
+								result += '\n' + this.getIndent(this.level);
 							}
 						}
 					}
-					if (this.hasChildren[this.tagLevel]) {
+					if (this.hasChildren[this.level]) {
 						result += char;
 					} else {
 						this.valueBuffer = this.valueBuffer.replace(/^[\s\n]+/g, '');
@@ -103,7 +103,7 @@ module pml {
 						// Ignore invalid comment end delimiters
 						
 						this.commentLevel--;
-						if (this.hasChildren[this.tagLevel]) {
+						if (this.hasChildren[this.level]) {
 							result += char;
 						} else {
 							if (this.valueBuffer) {
@@ -129,52 +129,52 @@ module pml {
 					}
 
 				} else {
-					if (char == tagStart) {
+					if (char == keyStart) {
 
 						if (this.inIgnoredValue) {
 							result = this.endIgnoredValueConversion(result);
 						}
-						this.hasChildren[this.tagLevel] = true;
+						this.hasChildren[this.level] = true;
 						if (this.inKey) {
 							result = result.replace(/[\s\n]+$/g, '');
-							this.addTidyMessage(MessageKind.WARNING, result, 'Added missing value delimiter.');
-							result += valueDelimiter;
+							this.addTidyMessage(MessageKind.WARNING, result, 'Added missing value start delimiter.');
+							result += valueStart;
 						}
 						this.inKey = true;
-						result += '\n' + this.getIndent(this.tagLevel);
+						result += '\n' + this.getIndent(this.level);
 						result += char;
-						this.tagLevel++;
+						this.level++;
 
-						this.hasChildren[this.tagLevel] = this.checkAheadForChildren(src);
+						this.hasChildren[this.level] = this.checkAheadForChildren(src);
 
-					} else if (char == valueDelimiter) {
+					} else if (char == valueStart) {
 
 						this.inKey = false;
 						result += char;
 
-					} else if (char == tagEnd) {
+					} else if (char == valueEnd) {
 
 						if (this.inKey) {
-							this.addTidyMessage(MessageKind.WARNING, result, 'Added missing value delimiter.');
-							result += valueDelimiter;
+							this.addTidyMessage(MessageKind.WARNING, result, 'Added missing value start delimiter.');
+							result += valueStart;
 						} else if (this.inIgnoredValue) {
 							result = this.endIgnoredValueConversion(result);
 						}
-						if (this.hasChildren[this.tagLevel]) {
-							result += '\n' + this.getIndent(this.tagLevel - 1);
+						if (this.hasChildren[this.level]) {
+							result += '\n' + this.getIndent(this.level - 1);
 						} else {
 							result += this.valueBuffer;
 							this.valueBuffer = '';
 						}
-						if (this.tagLevel) {
-							// Ignore invalid closing tag
+						if (this.level) {
+							// Ignore invalid closing delimiter
 							result += char;
 
-							this.hasChildren[this.tagLevel] = false;
-							this.tagLevel--;
+							this.hasChildren[this.level] = false;
+							this.level--;
 							this.inKey = false;
 						} else {
-							this.addTidyMessage(MessageKind.WARNING, result, 'Invalid tag end delimiter removed.');
+							this.addTidyMessage(MessageKind.WARNING, result, 'Invalid value end delimiter removed.');
 						}
 
 					} else {
@@ -190,18 +190,18 @@ module pml {
 
 						} else {
 
-							if (this.hasChildren[this.tagLevel]) {
+							if (this.hasChildren[this.level]) {
 
 								if (/\s/.test(char)) {
 									// Ignore white space
 								} else {
 									this.inIgnoredValue = true;
 									this.inKey = false;
-									result += '\n' + this.getIndent(this.tagLevel);
+									result += '\n' + this.getIndent(this.level);
 									this.addTidyMessage(MessageKind.WARNING, result,
-										'Ignored value found and converted to a ' + (this.convertIgnoredValueToTag ? 'tag' : 'comment') + '.');
-									if (this.convertIgnoredValueToTag) {
-										result += tagStart + valueDelimiter;
+										'Ignored value found and converted to a ' + (this.convertIgnoredValueToPair ? 'pair' : 'comment') + '.');
+									if (this.convertIgnoredValueToPair) {
+										result += keyStart + valueStart;
 									} else {
 										result += commentStart;
 									}
@@ -240,8 +240,8 @@ module pml {
 		
 		protected endIgnoredValueConversion(result: string): string {
 			result = result.replace(/[\s\n]+$/g, '');
-			if (this.convertIgnoredValueToTag) {
-				result += this.getTagEnd();
+			if (this.convertIgnoredValueToPair) {
+				result += this.getValueEnd();
 			} else {
 				result += this.getCommentEnd();
 			}
@@ -264,8 +264,8 @@ module pml {
 			
 			var commentStart = this.getCommentStart();
 			var commentEnd = this.getCommentEnd();
-			var tagStart = this.getTagStart();
-			var tagEnd = this.getTagEnd();
+			var keyStart = this.getKeyStart();
+			var valueEnd = this.getValueEnd();
 
 			for (var i = this.charId + 1, n = src.length; i < n; i++) {
 				var char = src.charAt(i);
@@ -280,12 +280,12 @@ module pml {
 
 				} else if (commentLevel <= 0) {
 
-					if (char == tagStart) {
+					if (char == keyStart) {
 
 						result = true;
 						break;
 
-					} else if (char == tagEnd) {
+					} else if (char == valueEnd) {
 
 						result = false;
 						break;
@@ -296,12 +296,12 @@ module pml {
 			return result;
 		}
 
-		getConvertIgnoredValueToTag(): boolean {
-			return this.convertIgnoredValueToTag;
+		getConvertIgnoredValueToPair(): boolean {
+			return this.convertIgnoredValueToPair;
 		}
 
-		setConvertIgnoredValueToTag(v: boolean): void {
-			this.convertIgnoredValueToTag = v;
+		setConvertIgnoredValueToPair(v: boolean): void {
+			this.convertIgnoredValueToPair = v;
 		}
 		
 		getIndentChar(): string {

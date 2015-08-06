@@ -74,9 +74,9 @@ module pml {
 			
 			var commentStart = this.getCommentStart();
 			var commentEnd = this.getCommentEnd();
-			var tagStart = this.getTagStart();
-			var tagEnd = this.getTagEnd();
-			var valueDelimiter = this.getValueDelimiter();
+			var keyStart = this.getKeyStart();
+			var valueStart = this.getValueStart();
+			var valueEnd = this.getValueEnd();
 
 			for (var n = lines.length; this.lineId < n; this.lineId++) {
 
@@ -113,27 +113,27 @@ module pml {
 
 						} else {
 							
-							// Context: in a tag or root
+							// Context: in a pair or root
 							
 							if (this.isKey) {
 								
-								// Context: in tag key
+								// Context: in key
 								
-								if (char == valueDelimiter) {
+								if (char == valueStart) {
 
 									this.isKey = false;
 
-								} else if (char == tagStart) {
+								} else if (char == keyStart) {
 
-									this.addLinterError('Invalid location for tag start delimiter.');
+									this.addLinterError('Invalid location for key start delimiter.');
 									
 									this.isKey = false;
 									this.charId--;
 									continue;
 
-								} else if (char == tagEnd) {
+								} else if (char == valueEnd) {
 
-									this.addLinterError('Invalid location for tag end delimiter.');
+									this.addLinterError('Invalid location for value end delimiter.');
 									
 									this.isKey = false;
 									this.charId--;
@@ -143,31 +143,31 @@ module pml {
 
 							} else {
 								
-								// Context: in tag value
+								// Context: in value
 								
-								if (char == valueDelimiter) {
+								if (char == valueStart) {
 
-									this.addLinterError('Invalid location for value delimiter.');
+									this.addLinterError('Invalid location for value start delimiter.');
 
-								} else if (char == tagStart) {
+								} else if (char == keyStart) {
 
 									this.hasChildren[this.level] = true;
 									
 									if (this.hasValue[this.level]) {
-										this.addLinterWarning('Tag has both children and value.');
+										this.addLinterWarning('Pair has both children and value.');
 									}
 									
 									this.level++;
 									this.isKey = true;
 
-								} else if (char == tagEnd) {
+								} else if (char == valueEnd) {
 
 									this.hasValue[this.level] = false;
 									this.hasChildren[this.level] = false;
 									this.level--;
 									
 									if (this.level < 0) {
-										this.addLinterError('Invalid location for tag end delimiter.');
+										this.addLinterError('Invalid location for value end delimiter.');
 										this.level = 0;
 									}
 									
@@ -178,7 +178,7 @@ module pml {
 									this.hasValue[this.level] = true;
 									
 									if (this.hasChildren[this.level]) {
-										this.addLinterWarning('Tag has both children and value.');
+										this.addLinterWarning('Pair has both children and value.');
 									}
 
 								}
@@ -194,7 +194,7 @@ module pml {
 				this.addLinterWarning('Comment not closed.');
 			}
 			if (this.level > 0) {
-				this.addLinterError('Tag not closed.');
+				this.addLinterError('Value not closed.');
 			}
 		}
 	}
