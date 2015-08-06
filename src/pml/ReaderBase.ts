@@ -1,3 +1,4 @@
+/// <reference path='../../lib/illa/ArrayUtil.ts'/>
 /// <reference path='../../lib/illa/Log.ts'/>
 
 /// <reference path='Message.ts'/>
