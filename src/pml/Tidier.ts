@@ -81,7 +81,8 @@ module pml {
 					this.commentLevel++;
 					if (this.commentLevel == 1) {
 						if (!this.inKey) {
-							if (this.hasChildren[this.level]) {
+							if (result && this.hasChildren[this.level]) {
+								// Result check ensures header characters stay at the start
 								result += '\n' + this.getIndent(this.level);
 							}
 						}
@@ -160,14 +161,14 @@ module pml {
 						} else if (this.inIgnoredValue) {
 							result = this.endIgnoredValueConversion(result);
 						}
-						if (this.hasChildren[this.level]) {
-							result += '\n' + this.getIndent(this.level - 1);
-						} else {
-							result += this.valueBuffer;
-							this.valueBuffer = '';
-						}
 						if (this.level) {
-							// Ignore invalid closing delimiter
+							// Valid closing char
+							if (this.hasChildren[this.level]) {
+								result += '\n' + this.getIndent(this.level - 1);
+							} else {
+								result += this.valueBuffer;
+								this.valueBuffer = '';
+							}
 							result += char;
 
 							this.hasChildren[this.level] = false;
