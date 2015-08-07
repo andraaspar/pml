@@ -5,6 +5,8 @@
 module pml {
 	export class Stringer {
 		
+		private static instance: Stringer;
+		
 		private commentStart: string;
 		private keyStart: string;
 		private valueStart: string;
@@ -21,8 +23,23 @@ module pml {
 			) {
 
 		}
+		
+		static getInstance(): Stringer {
+			if (!this.instance) {
+				this.instance = new Stringer();
+			}
+			return this.instance;
+		}
+		
+		static stringify(src: Pair): string {
+			return this.getInstance().stringifyInternal(src);
+		}
+		
+		stringify(src: Pair): string {
+			return this.stringifyInternal(src);
+		}
 
-		stringify(src: Pair, level = -1): string {
+		protected stringifyInternal(src: Pair, level = -1): string {
 			this.checkSeparators(src);
 			
 			var result = '';
@@ -38,14 +55,14 @@ module pml {
 				}
 				
 				// Only render pair if it is not the root
-				result += this.keyStart + src.name + this.valueStart;
+				result += this.keyStart + src.key + this.valueStart;
 			} else {
 				// For the root pair, render the header characters
 				result += this.commentStart + this.keyStart + this.valueStart + this.valueEnd + this.commentEnd;
 			}
 			if (src.children) {
 				for (var i = 0, n = src.children.length; i < n; i++) {
-					result += this.stringify(src.children[i], level + 1);
+					result += this.stringifyInternal(src.children[i], level + 1);
 				}
 				
 				if (this.prettyPrint) {
@@ -187,7 +204,7 @@ module pml {
 		}
 
 		private checkIsCharacterSafeForContent(src: Pair, c: string): boolean {
-			if (src.name.indexOf(c) == -1) {
+			if (src.key.indexOf(c) == -1) {
 				if (src.children) {
 					for (var i = 0, n = src.children.length; i < n; i++) {
 						if (!this.checkIsCharacterSafeForContent(src.children[i], c)) {

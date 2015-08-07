@@ -90,18 +90,18 @@ module pml {
 				indent += this.indentChar;
 			}
 
-			if (src.parent && src.name == '') {
+			if (src.parent && src.key == '') {
 				// If text node
 				
 				result += this.prepareText(src, indent);
 
-			} else if (src.name.charAt(0) != this.attributeChar) {
+			} else if (src.key.charAt(0) != this.attributeChar) {
 				// If not attribute
 				
-				var startsWithExclamationMark = src.name.charAt(0) == '!';
-				var isComment = src.name == '!--';
-				var startsWithQuestionMark = src.name.charAt(0) == '?';
-				var hasEnd = !startsWithExclamationMark && !startsWithQuestionMark && illa.ArrayUtil.indexOf(this.noEndTags, src.name) == -1
+				var startsWithExclamationMark = src.key.charAt(0) == '!';
+				var isComment = src.key == '!--';
+				var startsWithQuestionMark = src.key.charAt(0) == '?';
+				var hasEnd = !startsWithExclamationMark && !startsWithQuestionMark && illa.ArrayUtil.indexOf(this.noEndTags, src.key) == -1
 				var isBlock = this.checkIsBlock(src);
 				
 
@@ -119,15 +119,15 @@ module pml {
 					// Render start tag
 					
 					result += '<';
-					result += illa.StringUtil.escapeHTML(src.name);
+					result += illa.StringUtil.escapeHTML(src.key);
 
 					if (src.children) {
 						// Render attributes
 						
 						for (var i = 0, n = src.children.length; i < n; i++) {
 							var child = src.children[i];
-							if (child.name.charAt(0) == this.attributeChar) {
-								var attributeName = child.name.slice(1);
+							if (child.key.charAt(0) == this.attributeChar) {
+								var attributeName = child.key.slice(1);
 								if (attributeName || child.value) result += ' ';
 								
 								// Attribute name is not required for old DOCTYPE support
@@ -170,7 +170,7 @@ module pml {
 					}
 
 					result += '</';
-					result += illa.StringUtil.escapeHTML(src.name);
+					result += illa.StringUtil.escapeHTML(src.key);
 					result += '>';
 				}
 
@@ -202,27 +202,27 @@ module pml {
 
 		protected checkIsPreformattedTag(src: Pair): boolean {
 			if (!src) return false;
-			return illa.ArrayUtil.indexOf(this.preformattedTags, src.name) > -1 || this.checkIsPreformattedTag(src.parent);
+			return illa.ArrayUtil.indexOf(this.preformattedTags, src.key) > -1 || this.checkIsPreformattedTag(src.parent);
 		}
 
 		protected checkIsNoLineBreakExpansionTag(src: Pair): boolean {
 			if (!src) return false;
-			return illa.ArrayUtil.indexOf(this.noLineBreakExpansionTags, src.name) > -1 || this.checkIsNoLineBreakExpansionTag(src.parent);
+			return illa.ArrayUtil.indexOf(this.noLineBreakExpansionTags, src.key) > -1 || this.checkIsNoLineBreakExpansionTag(src.parent);
 		}
 
 		protected checkIsNonReplaceableCharacterTag(src: Pair): boolean {
 			if (!src) return false;
-			return illa.ArrayUtil.indexOf(this.nonReplaceableCharacterTags, src.name) > -1 || this.checkIsNonReplaceableCharacterTag(src.parent);
+			return illa.ArrayUtil.indexOf(this.nonReplaceableCharacterTags, src.key) > -1 || this.checkIsNonReplaceableCharacterTag(src.parent);
 		}
 
 		protected checkIsInlineDependingOnContent(src: Pair): boolean {
 			if (!src) return false;
-			return illa.ArrayUtil.indexOf(this.inlineDependingOnContentTags, src.name) > -1;
+			return illa.ArrayUtil.indexOf(this.inlineDependingOnContentTags, src.key) > -1;
 		}
 
 		protected checkIsBlock(src: Pair): boolean {
 			if (!src) return false;
-			switch (src.name.charAt(0)) {
+			switch (src.key.charAt(0)) {
 				case '':
 				case this.attributeChar:
 				case '!':
@@ -232,7 +232,7 @@ module pml {
 			if (this.checkIsInlineDependingOnContent(src)) {
 				return this.checkHasBlockContent(src);
 			} else {
-				return illa.ArrayUtil.indexOf(this.inlineTags, src.name) == -1;
+				return illa.ArrayUtil.indexOf(this.inlineTags, src.key) == -1;
 			}
 		}
 

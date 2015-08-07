@@ -5,6 +5,8 @@
 module pml {
 	export class Parser extends ReaderBase {
 		
+		private static instance: Parser;
+		
 		private source: string;
 		
 		private linter: Linter;
@@ -15,6 +17,17 @@ module pml {
 			this.linter = new Linter();
 			this.linter.setThrowOnError(true);
 			this.linter.setLogMessages(true);
+		}
+		
+		static getInstance(): Parser {
+			if (!this.instance) {
+				this.instance = new Parser();
+			}
+			return this.instance;
+		}
+		
+		static parse(src: string): Pair {
+			return this.getInstance().parse(src);
 		}
 		
 		parse(src: string): Pair {
@@ -47,7 +60,7 @@ module pml {
 		
 		protected readPairs(src: string): Pair {
 			var rootPair = new Pair();
-			rootPair.name = '';
+			rootPair.key = '';
 			rootPair.children = [];
 			
 			var splitSrc = src.split(this.getKeyStart());
@@ -85,7 +98,7 @@ module pml {
 		
 		protected readPairContent(pair: Pair, src: string, hasChildren: boolean): void {
 			var contentSplit = src.split(this.getValueStart());
-			pair.name = contentSplit[0];
+			pair.key = contentSplit[0];
 			if (!hasChildren) {
 				pair.value = contentSplit[1] || '';
 			}

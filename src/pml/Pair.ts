@@ -2,7 +2,7 @@
 
 module pml {
 	export class Pair {
-		name: string;
+		key: string;
 		value: string;
 		children: Pair[];
 		parent: Pair;
