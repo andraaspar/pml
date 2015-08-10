@@ -132,7 +132,7 @@ module pml {
 							this.setContext(HtmlParserContext.TAG_SPACE);
 						} else if (char == '>') {
 							this.setContext(HtmlParserContext.TEXT_NODE);
-						} else if (char == '/') {
+						} else if (char == '/' && this.src[this.charId + 1] == '>') {
 							this.returnToParent();
 							this.returnToParent();
 							this.charId++;
@@ -241,9 +241,15 @@ module pml {
 					}
 					break;
 				case HtmlParserContext.CLOSING_TAG:
-					while (this.currentNode.name !== this.closingTagName) {
-						// Find parent to close
-						this.returnToParent();
+					var startingNode = this.currentNode;
+					try {
+						while (this.currentNode.name !== this.closingTagName) {
+							// Find parent to close
+							this.returnToParent();
+						}
+					} catch (e) {
+						console.log(startingNode);
+						throw 'Could not find <' + this.closingTagName + '> as an ancestor of the current <' + startingNode.name + '> tag.';
 					}
 					// Close parent
 					this.returnToParent();
