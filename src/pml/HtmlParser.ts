@@ -131,6 +131,7 @@ module pml {
 							this.returnToParent();
 							this.setContext(HtmlParserContext.TAG_SPACE);
 						} else if (char == '>') {
+							this.returnToParent();
 							this.setContext(HtmlParserContext.TEXT_NODE);
 						} else if (char == '/' && this.src[this.charId + 1] == '>') {
 							this.returnToParent();
@@ -255,14 +256,13 @@ module pml {
 					this.returnToParent();
 					break;
 				case HtmlParserContext.TEXT_NODE:
-					this.currentNode.value = this.currentNode.value.replace(/^[\s\n]+|[\s\n]+$/g, '');
-					if (!this.currentNode.value) {
+					if (/^[\s\n]*$/g.test(this.currentNode.value)) {
 						this.currentNode.parent.children.pop();
 						if (this.currentNode.previousSibling) {
 							this.currentNode.previousSibling.nextSibling = undefined;
 						}
-						this.currentNode = this.currentNode.parent;
 					}
+					this.returnToParent();
 					break;
 			}
 			
