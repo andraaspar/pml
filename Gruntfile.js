@@ -21,7 +21,7 @@ module.exports = function(grunt) {
 //			LODASH_INCLUDE: ['cloneDeep', 'isEqual'],
 			MAIN_LESS: '<%= SRC_FOLDER %>/less/_desktop.less',
 			MAIN_TS: '<%= SRC_FOLDER %>/ts/pml/Main.ts',
-			TEST_COUNT: 1,
+			TEST_COUNT: 2,
 			
 			// Other variables
 			

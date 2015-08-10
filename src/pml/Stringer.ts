@@ -19,7 +19,7 @@ module pml {
 
 		constructor(
 			private preferredSeparatorPairs: string[] = ['{}', '[]', '()', '<>', '«»', '◄►', '├┤', '╠╣'],
-			private preferredSingleSeparators: string[] = ['~', '|', '\\', '•', '→', '⁞', '▪', '╪']
+			private preferredSingleSeparators: string[] = ['|', '\\', '~', '•', '→', '⁞', '▪', '╪']
 			) {
 
 		}
@@ -60,7 +60,7 @@ module pml {
 				// For the root node, render the header characters
 				result += this.commentStart + this.nodeStart + this.nameEnd + this.nodeEnd + this.commentEnd;
 			}
-			if (src.children) {
+			if (this.hasChildren(src)) {
 				for (var i = 0, n = src.children.length; i < n; i++) {
 					result += this.stringifyInternal(src.children[i], level + 1);
 				}
@@ -73,7 +73,7 @@ module pml {
 				result += src.value;
 			}
 			if (src.parent) {
-				if (src.children) {
+				if (this.hasChildren(src)) {
 					// If has children, put EOL before node end
 					result += this.eolChar;
 					result += indent;
@@ -82,6 +82,10 @@ module pml {
 				result += this.nodeEnd;
 			}
 			return result;
+		}
+		
+		private hasChildren(src: Node): boolean {
+			return src.children && src.children.length > 0;
 		}
 
 		private checkSeparators(src: Node): void {
@@ -205,7 +209,7 @@ module pml {
 
 		private checkIsCharacterSafeForContent(src: Node, c: string): boolean {
 			if (src.name.indexOf(c) == -1) {
-				if (src.children) {
+				if (this.hasChildren(src)) {
 					for (var i = 0, n = src.children.length; i < n; i++) {
 						if (!this.checkIsCharacterSafeForContent(src.children[i], c)) {
 							return false;
