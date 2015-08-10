@@ -5,14 +5,14 @@ module pml {
 
 		private indentChar: string = '\t';
 		private eolChar: string = '\n';
-		private convertIgnoredValueToPair: boolean = false;
+		private convertIgnoredValueToNode: boolean = false;
 		
 		private charId: number;
 		private valueBuffer = '';
 		private hasChildren: boolean[] = [];
 		private commentLevel = 0;
 		private level = 0;
-		private inKey = false;
+		private inName = false;
 		private inIgnoredValue = false;
 
 		constructor() {
@@ -31,7 +31,7 @@ module pml {
 			this.hasChildren = [];
 			this.commentLevel = 0;
 			this.level = 0;
-			this.inKey = false;
+			this.inName = false;
 			this.inIgnoredValue = false;
 
 			var result = this.tidyLoop(src);
@@ -44,9 +44,9 @@ module pml {
 				result = this.tidyLoop(src, result);
 			}
 			if (this.level > 0) {
-				this.addTidyMessage(MessageKind.WARNING, result, 'Added ' + this.level + ' missing value end delimiter(s).');
+				this.addTidyMessage(MessageKind.WARNING, result, 'Added ' + this.level + ' missing node end delimiter(s).');
 				for (var i = 0; i < this.level; i++) {
-					src += this.getValueEnd();
+					src += this.getNodeEnd();
 				}
 				result = this.tidyLoop(src, result);
 			}
@@ -61,9 +61,9 @@ module pml {
 			
 			var commentStart = this.getCommentStart();
 			var commentEnd = this.getCommentEnd();
-			var keyStart = this.getKeyStart();
-			var valueStart = this.getValueStart();
-			var valueEnd = this.getValueEnd();
+			var nodeStart = this.getNodeStart();
+			var nameEnd = this.getNameEnd();
+			var nodeEnd = this.getNodeEnd();
 			
 			if (this.level == 0 && this.charId == 0) {
 				this.hasChildren[this.level] = this.checkAheadForChildren(src);
@@ -80,7 +80,7 @@ module pml {
 
 					this.commentLevel++;
 					if (this.commentLevel == 1) {
-						if (!this.inKey) {
+						if (!this.inName) {
 							if (result && this.hasChildren[this.level]) {
 								// Result check ensures header characters stay at the start
 								result += '\n' + this.getIndent(this.level);
@@ -119,7 +119,7 @@ module pml {
 
 				} else if (this.commentLevel > 0) {
 
-					if (this.inKey) {
+					if (this.inName) {
 						result += char;
 					} else {
 						if (this.valueBuffer) {
@@ -130,34 +130,34 @@ module pml {
 					}
 
 				} else {
-					if (char == keyStart) {
+					if (char == nodeStart) {
 
 						if (this.inIgnoredValue) {
 							result = this.endIgnoredValueConversion(result);
 						}
 						this.hasChildren[this.level] = true;
-						if (this.inKey) {
+						if (this.inName) {
 							result = result.replace(/[\s\n]+$/g, '');
-							this.addTidyMessage(MessageKind.WARNING, result, 'Added missing value start delimiter.');
-							result += valueStart;
+							this.addTidyMessage(MessageKind.WARNING, result, 'Added missing name end delimiter.');
+							result += nameEnd;
 						}
-						this.inKey = true;
+						this.inName = true;
 						result += '\n' + this.getIndent(this.level);
 						result += char;
 						this.level++;
 
 						this.hasChildren[this.level] = this.checkAheadForChildren(src);
 
-					} else if (char == valueStart) {
+					} else if (char == nameEnd) {
 
-						this.inKey = false;
+						this.inName = false;
 						result += char;
 
-					} else if (char == valueEnd) {
+					} else if (char == nodeEnd) {
 
-						if (this.inKey) {
-							this.addTidyMessage(MessageKind.WARNING, result, 'Added missing value start delimiter.');
-							result += valueStart;
+						if (this.inName) {
+							this.addTidyMessage(MessageKind.WARNING, result, 'Added missing name end delimiter.');
+							result += nameEnd;
 						} else if (this.inIgnoredValue) {
 							result = this.endIgnoredValueConversion(result);
 						}
@@ -173,15 +173,15 @@ module pml {
 
 							this.hasChildren[this.level] = false;
 							this.level--;
-							this.inKey = false;
+							this.inName = false;
 						} else {
-							this.addTidyMessage(MessageKind.WARNING, result, 'Invalid value end delimiter removed.');
+							this.addTidyMessage(MessageKind.WARNING, result, 'Invalid node end delimiter removed.');
 						}
 
 					} else {
 
 
-						if (this.inKey) {
+						if (this.inName) {
 
 							result += char;
 
@@ -197,12 +197,12 @@ module pml {
 									// Ignore white space
 								} else {
 									this.inIgnoredValue = true;
-									this.inKey = false;
+									this.inName = false;
 									result += '\n' + this.getIndent(this.level);
 									this.addTidyMessage(MessageKind.WARNING, result,
-										'Ignored value found and converted to a ' + (this.convertIgnoredValueToPair ? 'pair' : 'comment') + '.');
-									if (this.convertIgnoredValueToPair) {
-										result += keyStart + valueStart;
+										'Ignored value found and converted to a ' + (this.convertIgnoredValueToNode ? 'node' : 'comment') + '.');
+									if (this.convertIgnoredValueToNode) {
+										result += nodeStart + nameEnd;
 									} else {
 										result += commentStart;
 									}
@@ -241,8 +241,8 @@ module pml {
 		
 		protected endIgnoredValueConversion(result: string): string {
 			result = result.replace(/[\s\n]+$/g, '');
-			if (this.convertIgnoredValueToPair) {
-				result += this.getValueEnd();
+			if (this.convertIgnoredValueToNode) {
+				result += this.getNodeEnd();
 			} else {
 				result += this.getCommentEnd();
 			}
@@ -265,8 +265,8 @@ module pml {
 			
 			var commentStart = this.getCommentStart();
 			var commentEnd = this.getCommentEnd();
-			var keyStart = this.getKeyStart();
-			var valueEnd = this.getValueEnd();
+			var nodeStart = this.getNodeStart();
+			var nodeEnd = this.getNodeEnd();
 
 			for (var i = this.charId + 1, n = src.length; i < n; i++) {
 				var char = src.charAt(i);
@@ -281,12 +281,12 @@ module pml {
 
 				} else if (commentLevel <= 0) {
 
-					if (char == keyStart) {
+					if (char == nodeStart) {
 
 						result = true;
 						break;
 
-					} else if (char == valueEnd) {
+					} else if (char == nodeEnd) {
 
 						result = false;
 						break;
@@ -297,12 +297,12 @@ module pml {
 			return result;
 		}
 
-		getConvertIgnoredValueToPair(): boolean {
-			return this.convertIgnoredValueToPair;
+		getConvertIgnoredValueToNode(): boolean {
+			return this.convertIgnoredValueToNode;
 		}
 
-		setConvertIgnoredValueToPair(v: boolean): void {
-			this.convertIgnoredValueToPair = v;
+		setConvertIgnoredValueToNode(v: boolean): void {
+			this.convertIgnoredValueToNode = v;
 		}
 		
 		getIndentChar(): string {

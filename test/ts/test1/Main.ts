@@ -46,7 +46,7 @@ module test1 {
 			(<HTMLIFrameElement>iframe.get(0)).src = 'data:text/html;charset=utf-8,' + htmlOut;
 			
 			var tidier = new pml.Tidier();
-			tidier.setConvertIgnoredValueToPair(true);
+			tidier.setConvertIgnoredValueToNode(true);
 			var tidyData = tidier.tidy(data);
 			illa.Log.info(tidyData);
 			

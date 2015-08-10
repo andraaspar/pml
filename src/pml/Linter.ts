@@ -8,7 +8,7 @@ module pml {
 		private whiteSpaceRE = /\s/;
 		private level: number;
 		private commentLevel: number;
-		private isKey: boolean;
+		private isName: boolean;
 		private hasValue: boolean[];
 		private hasChildren: boolean[];
 		private lineId: number;
@@ -67,16 +67,16 @@ module pml {
 			var lines = src.split(/\r\n|\n|\r/g);
 			this.level = 0;
 			this.commentLevel = 0;
-			this.isKey = false;
+			this.isName = false;
 			this.hasValue = [];
 			this.hasChildren = [];
 			this.lineId = 0;
 			
 			var commentStart = this.getCommentStart();
 			var commentEnd = this.getCommentEnd();
-			var keyStart = this.getKeyStart();
-			var valueStart = this.getValueStart();
-			var valueEnd = this.getValueEnd();
+			var nodeStart = this.getNodeStart();
+			var nameEnd = this.getNameEnd();
+			var nodeEnd = this.getNodeEnd();
 
 			for (var n = lines.length; this.lineId < n; this.lineId++) {
 
@@ -113,29 +113,29 @@ module pml {
 
 						} else {
 							
-							// Context: in a pair or root
+							// Context: in a node or root
 							
-							if (this.isKey) {
+							if (this.isName) {
 								
-								// Context: in key
+								// Context: in name
 								
-								if (char == valueStart) {
+								if (char == nameEnd) {
 
-									this.isKey = false;
+									this.isName = false;
 
-								} else if (char == keyStart) {
+								} else if (char == nodeStart) {
 
-									this.addLinterError('Invalid location for key start delimiter.');
+									this.addLinterError('Invalid location for node start delimiter.');
 									
-									this.isKey = false;
+									this.isName = false;
 									this.charId--;
 									continue;
 
-								} else if (char == valueEnd) {
+								} else if (char == nodeEnd) {
 
-									this.addLinterError('Invalid location for value end delimiter.');
+									this.addLinterError('Invalid location for node end delimiter.');
 									
-									this.isKey = false;
+									this.isName = false;
 									this.charId--;
 									continue;
 
@@ -145,40 +145,40 @@ module pml {
 								
 								// Context: in value
 								
-								if (char == valueStart) {
+								if (char == nameEnd) {
 
-									this.addLinterError('Invalid location for value start delimiter.');
+									this.addLinterError('Invalid location for name end delimiter.');
 
-								} else if (char == keyStart) {
+								} else if (char == nodeStart) {
 
 									this.hasChildren[this.level] = true;
 									
 									if (this.hasValue[this.level]) {
-										this.addLinterWarning('Pair has both children and value.');
+										this.addLinterWarning('Node has both children and value.');
 									}
 									
 									this.level++;
-									this.isKey = true;
+									this.isName = true;
 
-								} else if (char == valueEnd) {
+								} else if (char == nodeEnd) {
 
 									this.hasValue[this.level] = false;
 									this.hasChildren[this.level] = false;
 									this.level--;
 									
 									if (this.level < 0) {
-										this.addLinterError('Invalid location for value end delimiter.');
+										this.addLinterError('Invalid location for node end delimiter.');
 										this.level = 0;
 									}
 									
-									this.isKey = false;
+									this.isName = false;
 
 								} else if (!this.whiteSpaceRE.test(char)) {
 
 									this.hasValue[this.level] = true;
 									
 									if (this.hasChildren[this.level]) {
-										this.addLinterWarning('Pair has both children and value.');
+										this.addLinterWarning('Node has both children and value.');
 									}
 
 								}
@@ -194,7 +194,7 @@ module pml {
 				this.addLinterWarning('Comment not closed.');
 			}
 			if (this.level > 0) {
-				this.addLinterError('Value not closed.');
+				this.addLinterError('Node not closed.');
 			}
 		}
 	}

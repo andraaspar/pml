@@ -1,7 +1,7 @@
 /// <reference path='../../lib/illa/ArrayUtil.ts'/>
 /// <reference path='../../lib/illa/StringUtil.ts'/>
 
-/// <reference path='Pair.ts'/>
+/// <reference path='Node.ts'/>
 
 module pml {
 	export class HtmlStringer {
@@ -82,7 +82,7 @@ module pml {
 
 		}
 
-		stringify(src: Pair, level = -1): string {
+		stringify(src: Node, level = -1): string {
 			var result = '';
 			
 			var indent = '';
@@ -90,18 +90,18 @@ module pml {
 				indent += this.indentChar;
 			}
 
-			if (src.parent && src.key == '') {
+			if (src.parent && src.name == '') {
 				// If text node
 				
 				result += this.prepareText(src, indent);
 
-			} else if (src.key.charAt(0) != this.attributeChar) {
+			} else if (src.name.charAt(0) != this.attributeChar) {
 				// If not attribute
 				
-				var startsWithExclamationMark = src.key.charAt(0) == '!';
-				var isComment = src.key == '!--';
-				var startsWithQuestionMark = src.key.charAt(0) == '?';
-				var hasEnd = !startsWithExclamationMark && !startsWithQuestionMark && illa.ArrayUtil.indexOf(this.noEndTags, src.key) == -1
+				var startsWithExclamationMark = src.name.charAt(0) == '!';
+				var isComment = src.name == '!--';
+				var startsWithQuestionMark = src.name.charAt(0) == '?';
+				var hasEnd = !startsWithExclamationMark && !startsWithQuestionMark && illa.ArrayUtil.indexOf(this.noEndTags, src.name) == -1
 				var isBlock = this.checkIsBlock(src);
 				
 
@@ -119,15 +119,15 @@ module pml {
 					// Render start tag
 					
 					result += '<';
-					result += illa.StringUtil.escapeHTML(src.key);
+					result += illa.StringUtil.escapeHTML(src.name);
 
 					if (src.children) {
 						// Render attributes
 						
 						for (var i = 0, n = src.children.length; i < n; i++) {
 							var child = src.children[i];
-							if (child.key.charAt(0) == this.attributeChar) {
-								var attributeName = child.key.slice(1);
+							if (child.name.charAt(0) == this.attributeChar) {
+								var attributeName = child.name.slice(1);
 								if (attributeName || child.value) result += ' ';
 								
 								// Attribute name is not required for old DOCTYPE support
@@ -170,7 +170,7 @@ module pml {
 					}
 
 					result += '</';
-					result += illa.StringUtil.escapeHTML(src.key);
+					result += illa.StringUtil.escapeHTML(src.name);
 					result += '>';
 				}
 
@@ -182,7 +182,7 @@ module pml {
 			return result;
 		}
 
-		protected prepareText(src: Pair, indent: string): string {
+		protected prepareText(src: Node, indent: string): string {
 			var result = src.value || '';
 			if (!this.checkIsNonReplaceableCharacterTag(src)) {
 				result = illa.StringUtil.escapeHTML(result);
@@ -200,29 +200,29 @@ module pml {
 			return result;
 		}
 
-		protected checkIsPreformattedTag(src: Pair): boolean {
+		protected checkIsPreformattedTag(src: Node): boolean {
 			if (!src) return false;
-			return illa.ArrayUtil.indexOf(this.preformattedTags, src.key) > -1 || this.checkIsPreformattedTag(src.parent);
+			return illa.ArrayUtil.indexOf(this.preformattedTags, src.name) > -1 || this.checkIsPreformattedTag(src.parent);
 		}
 
-		protected checkIsNoLineBreakExpansionTag(src: Pair): boolean {
+		protected checkIsNoLineBreakExpansionTag(src: Node): boolean {
 			if (!src) return false;
-			return illa.ArrayUtil.indexOf(this.noLineBreakExpansionTags, src.key) > -1 || this.checkIsNoLineBreakExpansionTag(src.parent);
+			return illa.ArrayUtil.indexOf(this.noLineBreakExpansionTags, src.name) > -1 || this.checkIsNoLineBreakExpansionTag(src.parent);
 		}
 
-		protected checkIsNonReplaceableCharacterTag(src: Pair): boolean {
+		protected checkIsNonReplaceableCharacterTag(src: Node): boolean {
 			if (!src) return false;
-			return illa.ArrayUtil.indexOf(this.nonReplaceableCharacterTags, src.key) > -1 || this.checkIsNonReplaceableCharacterTag(src.parent);
+			return illa.ArrayUtil.indexOf(this.nonReplaceableCharacterTags, src.name) > -1 || this.checkIsNonReplaceableCharacterTag(src.parent);
 		}
 
-		protected checkIsInlineDependingOnContent(src: Pair): boolean {
+		protected checkIsInlineDependingOnContent(src: Node): boolean {
 			if (!src) return false;
-			return illa.ArrayUtil.indexOf(this.inlineDependingOnContentTags, src.key) > -1;
+			return illa.ArrayUtil.indexOf(this.inlineDependingOnContentTags, src.name) > -1;
 		}
 
-		protected checkIsBlock(src: Pair): boolean {
+		protected checkIsBlock(src: Node): boolean {
 			if (!src) return false;
-			switch (src.key.charAt(0)) {
+			switch (src.name.charAt(0)) {
 				case '':
 				case this.attributeChar:
 				case '!':
@@ -232,11 +232,11 @@ module pml {
 			if (this.checkIsInlineDependingOnContent(src)) {
 				return this.checkHasBlockContent(src);
 			} else {
-				return illa.ArrayUtil.indexOf(this.inlineTags, src.key) == -1;
+				return illa.ArrayUtil.indexOf(this.inlineTags, src.name) == -1;
 			}
 		}
 
-		protected checkHasBlockContent(src: Pair): boolean {
+		protected checkHasBlockContent(src: Node): boolean {
 			if (src && src.children) {
 				for (var i = 0, n = src.children.length; i < n; i++) {
 					var child = src.children[i];

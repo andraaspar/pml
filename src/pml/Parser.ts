@@ -1,4 +1,4 @@
-/// <reference path='Pair.ts'/>
+/// <reference path='Node.ts'/>
 /// <reference path='Linter.ts'/>
 /// <reference path='ReaderBase.ts'/>
 
@@ -26,11 +26,11 @@ module pml {
 			return this.instance;
 		}
 		
-		static parse(src: string): Pair {
+		static parse(src: string): Node {
 			return this.getInstance().parse(src);
 		}
 		
-		parse(src: string): Pair {
+		parse(src: string): Node {
 			this.source = src;
 			
 			this.linter.lint(this.source);
@@ -38,7 +38,7 @@ module pml {
 			
 			this.readDelimiters(this.source);
 			var commentlessSource = this.removeComments(this.source);
-			return this.readPairs(commentlessSource);
+			return this.readNodes(commentlessSource);
 		}
 		
 		protected removeComments(src: string): string {
@@ -58,49 +58,49 @@ module pml {
 			return commentlessSrc;
 		}
 		
-		protected readPairs(src: string): Pair {
-			var rootPair = new Pair();
-			rootPair.key = '';
-			rootPair.children = [];
+		protected readNodes(src: string): Node {
+			var rootNode = new Node();
+			rootNode.name = '';
+			rootNode.children = [];
 			
-			var splitSrc = src.split(this.getKeyStart());
-			var parentPair = rootPair;
-			var previousPair: Pair;
+			var splitSrc = src.split(this.getNodeStart());
+			var parentNode = rootNode;
+			var previousNode: Node;
 			
 			for (var i = 1, n = splitSrc.length; i < n; i++) {
-				var pair = new Pair();
-				var tailSplit = splitSrc[i].split(this.getValueEnd());
+				var node = new Node();
+				var tailSplit = splitSrc[i].split(this.getNodeEnd());
 				var hasChildren = tailSplit.length == 1;
 				var parentsClosed = tailSplit.length - 2;
-				this.readPairContent(pair, tailSplit[0], hasChildren);
-				parentPair.children.push(pair);
-				pair.parent = parentPair;
-				if (previousPair) {
-					previousPair.nextSibling = pair;
-					pair.previousSibling = previousPair;
+				this.readNodeContent(node, tailSplit[0], hasChildren);
+				parentNode.children.push(node);
+				node.parent = parentNode;
+				if (previousNode) {
+					previousNode.nextSibling = node;
+					node.previousSibling = previousNode;
 				}
-				previousPair = pair;
+				previousNode = node;
 				if (hasChildren) {
-					pair.children = [];
-					parentPair = pair;
-					previousPair = null;
+					node.children = [];
+					parentNode = node;
+					previousNode = null;
 				} else {
 					while (parentsClosed) {
-						previousPair = parentPair;
-						parentPair = parentPair.parent;
+						previousNode = parentNode;
+						parentNode = parentNode.parent;
 						parentsClosed--;
 					}
 				}
 			}
 			
-			return rootPair;
+			return rootNode;
 		}
 		
-		protected readPairContent(pair: Pair, src: string, hasChildren: boolean): void {
-			var contentSplit = src.split(this.getValueStart());
-			pair.key = contentSplit[0];
+		protected readNodeContent(node: Node, src: string, hasChildren: boolean): void {
+			var contentSplit = src.split(this.getNameEnd());
+			node.name = contentSplit[0];
 			if (!hasChildren) {
-				pair.value = contentSplit[1] || '';
+				node.value = contentSplit[1] || '';
 			}
 		}
 		

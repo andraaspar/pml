@@ -1,6 +1,6 @@
 /// <reference path='../../lib/illa/ArrayUtil.ts'/>
 
-/// <reference path='Pair.ts'/>
+/// <reference path='Node.ts'/>
 
 module pml {
 	export class Stringer {
@@ -8,9 +8,9 @@ module pml {
 		private static instance: Stringer;
 		
 		private commentStart: string;
-		private keyStart: string;
-		private valueStart: string;
-		private valueEnd: string;
+		private nodeStart: string;
+		private nameEnd: string;
+		private nodeEnd: string;
 		private commentEnd: string;
 		
 		private prettyPrint: boolean = true;
@@ -31,21 +31,21 @@ module pml {
 			return this.instance;
 		}
 		
-		static stringify(src: Pair): string {
+		static stringify(src: Node): string {
 			return this.getInstance().stringifyInternal(src);
 		}
 		
-		stringify(src: Pair): string {
+		stringify(src: Node): string {
 			return this.stringifyInternal(src);
 		}
 
-		protected stringifyInternal(src: Pair, level = -1): string {
+		protected stringifyInternal(src: Node, level = -1): string {
 			this.checkSeparators(src);
 			
 			var result = '';
 			var indent = '';
 			if (src.parent) {
-				// Only indent pair if it is not the root
+				// Only indent node if it is not the root
 				if (this.prettyPrint) {
 					result += this.eolChar;
 					for (var i = 0; i < level; i++) {
@@ -54,11 +54,11 @@ module pml {
 					result += indent;
 				}
 				
-				// Only render pair if it is not the root
-				result += this.keyStart + src.key + this.valueStart;
+				// Only render node if it is not the root
+				result += this.nodeStart + src.name + this.nameEnd;
 			} else {
-				// For the root pair, render the header characters
-				result += this.commentStart + this.keyStart + this.valueStart + this.valueEnd + this.commentEnd;
+				// For the root node, render the header characters
+				result += this.commentStart + this.nodeStart + this.nameEnd + this.nodeEnd + this.commentEnd;
 			}
 			if (src.children) {
 				for (var i = 0, n = src.children.length; i < n; i++) {
@@ -66,7 +66,7 @@ module pml {
 				}
 				
 				if (this.prettyPrint) {
-					// Indent value end if this is not the root
+					// Indent node end if this is not the root
 					if (src.parent) result += indent;
 				}
 			} else {
@@ -74,34 +74,34 @@ module pml {
 			}
 			if (src.parent) {
 				if (src.children) {
-					// If has children, put EOL before value end
+					// If has children, put EOL before node end
 					result += this.eolChar;
 					result += indent;
 				}
-				// If not root, add value end
-				result += this.valueEnd;
+				// If not root, add node end
+				result += this.nodeEnd;
 			}
 			return result;
 		}
 
-		private checkSeparators(src: Pair): void {
+		private checkSeparators(src: Node): void {
 			var unsafeIndex = this.checkAreSeparatorsSafe(src);
 			while (unsafeIndex > -1) {
 				switch (unsafeIndex) {
 					case 0:
 					case 4:
-						var newPair = this.getNewSeparatorPair(src);
-						this.commentStart = newPair[0];
-						this.commentEnd = newPair[1];
+						var newNode = this.getNewSeparatorPair(src);
+						this.commentStart = newNode[0];
+						this.commentEnd = newNode[1];
 						break;
 					case 1:
 					case 3:
-						var newPair = this.getNewSeparatorPair(src);
-						this.keyStart = newPair[0];
-						this.valueEnd = newPair[1];
+						var newNode = this.getNewSeparatorPair(src);
+						this.nodeStart = newNode[0];
+						this.nodeEnd = newNode[1];
 						break;
 					case 2:
-						this.valueStart = this.getNewSingleSeparator(src);
+						this.nameEnd = this.getNewSingleSeparator(src);
 						break;
 					default:
 						throw 'Invalid index.';
@@ -111,10 +111,10 @@ module pml {
 		}
 		
 		private getSeparators(): string[] {
-			return [this.commentStart, this.keyStart, this.valueStart, this.valueEnd, this.commentEnd];
+			return [this.commentStart, this.nodeStart, this.nameEnd, this.nodeEnd, this.commentEnd];
 		}
 		
-		private checkAreSeparatorsSafe(src: Pair): number {
+		private checkAreSeparatorsSafe(src: Node): number {
 			var separators = this.getSeparators();
 			for (var i = 0, n = separators.length; i < n; i++) {
 				var separator = separators[i];
@@ -139,7 +139,7 @@ module pml {
 			return true;
 		}
 		
-		private getNewSeparatorPair(src: Pair): [string, string] {
+		private getNewSeparatorPair(src: Node): [string, string] {
 			var separators = this.getSeparators();
 			var result: [string, string];
 			var isValid = false;
@@ -165,7 +165,7 @@ module pml {
 			return result;
 		}
 		
-		private getNewSingleSeparator(src: Pair): string {
+		private getNewSingleSeparator(src: Node): string {
 			var separators = this.getSeparators();
 			var result: string;
 			var isValid = false;
@@ -185,26 +185,26 @@ module pml {
 			return result;
 		}
 		
-		private findFallbackSeparators(src: Pair): void {
+		private findFallbackSeparators(src: Node): void {
 			while (!this.checkIsCharacterSafeForContent(src, this.commentStart)) {
 				this.commentStart = this.getNewCharacter(this.commentStart);
 			}
-			while (!this.checkIsCharacterSafeForContent(src, this.keyStart)) {
-				this.keyStart = this.getNewCharacter(this.keyStart);
+			while (!this.checkIsCharacterSafeForContent(src, this.nodeStart)) {
+				this.nodeStart = this.getNewCharacter(this.nodeStart);
 			}
-			while (!this.checkIsCharacterSafeForContent(src, this.valueStart)) {
-				this.valueStart = this.getNewCharacter(this.valueStart);
+			while (!this.checkIsCharacterSafeForContent(src, this.nameEnd)) {
+				this.nameEnd = this.getNewCharacter(this.nameEnd);
 			}
-			while (!this.checkIsCharacterSafeForContent(src, this.valueEnd)) {
-				this.valueEnd = this.getNewCharacter(this.valueEnd);
+			while (!this.checkIsCharacterSafeForContent(src, this.nodeEnd)) {
+				this.nodeEnd = this.getNewCharacter(this.nodeEnd);
 			}
 			while (!this.checkIsCharacterSafeForContent(src, this.commentEnd)) {
 				this.commentEnd = this.getNewCharacter(this.commentEnd);
 			}
 		}
 
-		private checkIsCharacterSafeForContent(src: Pair, c: string): boolean {
-			if (src.key.indexOf(c) == -1) {
+		private checkIsCharacterSafeForContent(src: Node, c: string): boolean {
+			if (src.name.indexOf(c) == -1) {
 				if (src.children) {
 					for (var i = 0, n = src.children.length; i < n; i++) {
 						if (!this.checkIsCharacterSafeForContent(src.children[i], c)) {
@@ -222,9 +222,9 @@ module pml {
 		private getNewCharacter(prevChar: string): string {
 			var charCodes = [
 				this.commentStart.charCodeAt(0),
-				this.keyStart.charCodeAt(0),
-				this.valueStart.charCodeAt(0),
-				this.valueEnd.charCodeAt(0),
+				this.nodeStart.charCodeAt(0),
+				this.nameEnd.charCodeAt(0),
+				this.nodeEnd.charCodeAt(0),
 				this.commentEnd.charCodeAt(0)
 			];
 			var charCode = prevChar.charCodeAt(0);
