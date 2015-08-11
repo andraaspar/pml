@@ -1,4 +1,7 @@
+/// <reference path='../../lib/illa/_module.ts'/>
+/// <reference path='../../lib/illa/ArrayUtil.ts'/>
 
+/// <reference path='Node.ts'/>
 
 module pml {
 	export class HtmlHandler {

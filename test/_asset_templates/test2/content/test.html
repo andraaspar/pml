@@ -5,10 +5,21 @@
 		<meta name ="viewport" content="initial-scale=1, width=device-width" />
 		<meta http-equiv= X-UA-Compatible content = 'IE=edge'>
 		
-		<title>HTML test</title>
+		<title>HTML &amp; test</title>
 		
 		<link href="../../style/images/favicon.ico" rel="shortcut icon"/>
 		<link href="../style/test2.css" rel="stylesheet"/>
+		
+		<style>
+			.main-title
+			{
+				color: gray;
+			}
+			div[data-foo="bar"]
+			{
+				background: url('../../style/images/favicon.ico');
+			}
+		</style>
 		
 		<script src="../../script/jquery-1.11.2.min.js"></script>
 		<script src="../script/test2.js"></script>
@@ -19,10 +30,17 @@
 		</script>
 	</head>
 	<body>
-		<h1 class=main-title>HTML test</h1>
+		<h1 class=main-title>
+			HTML test
+		</h1>
 		<p>A simple test for HTML.</p>
 		<!-- My comment -->
 		<p>A <b>second</b> test for HTML.</p>
+		<pre>
+fizz
+buzz
+fizzbuzz
+		</pre>
 		<p>What happens to a<!--n inline--> comment?</p>
 		<div data-foo='bar'>
 			<table class="my-table" style='color:red; font-family: "Trebuchet MS", sans-serif'>

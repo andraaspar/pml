@@ -1,6 +1,5 @@
 /// <reference path='HtmlEntities.ts'/>
 /// <reference path='HtmlHandler.ts'/>
-/// <reference path='Node.ts'/>
 
 module pml {
 	export enum HtmlParserContext {
@@ -129,11 +128,15 @@ module pml {
 							if (nextChar == '/') {
 								this.setContext(HtmlParserContext.CLOSING_TAG);
 								this.charId++;
-							} else if (this.src.substr(this.charId + 1, 3) == '!--') {
-								this.setContext(HtmlParserContext.COMMENT);
-								this.charId += 3;
+							} else if (this.checkIsNonReplaceableCharacterTag(this.currentNode)) {
+								this.currentNode.value += char;
 							} else {
-								this.setContext(HtmlParserContext.TAG_NAME);
+								if (this.src.substr(this.charId + 1, 3) == '!--') {
+									this.setContext(HtmlParserContext.COMMENT);
+									this.charId += 3;
+								} else {
+									this.setContext(HtmlParserContext.TAG_NAME);
+								}
 							}
 						} else {
 							this.currentNode.value += char;
@@ -164,28 +167,24 @@ module pml {
 			if (this.hasChildren(node)) {
 				for (var i = 0; i < node.children.length; i++) {
 					var child = node.children[i];
+					var unignoredNextSibling = this.getUnignoredNextSibling(child);
+					var unignoredPreviousSibling = this.getUnignoredPreviousSibling(child);
 					
 					if (child.name == '') {
-						if (child.value == '') {
+						
+						if (!this.checkIsNonReplaceableCharacterTag(child.parent) && // Not a <script>
+							!this.checkIsPreformattedTag(child.parent)) { // Not a <pre>
 							
-							this.removeNode(child);
-							
-						} else if (/^[\s\n]*$/g.test(child.value)) { // Has whitespace value only
-						
-							var unignoredNextSibling = this.getUnignoredNextSibling(child);
-							var unignoredPreviousSibling = this.getUnignoredPreviousSibling(child);
-						
-							if (this.checkIsBlock(node) && // Parent is block
-								(!unignoredPreviousSibling || !unignoredNextSibling)) { // Is first or last child
-								
-								this.removeNode(child);
-								
-							} else if ((unignoredPreviousSibling || unignoredNextSibling) && // Has siblings
-								(!unignoredPreviousSibling || this.checkIsBlock(unignoredPreviousSibling)) && // Previous sibling does not exist or is block
-								(!unignoredNextSibling || this.checkIsBlock(unignoredNextSibling))) { // Next sibling does not exist or is block
-						
-								this.removeNode(child);
+							if (this.checkIsFirstInsideOrAfterBlock(child)) {
+								child.value = child.value.replace(/^[\s\n]+/g, '');
 							}
+							if (this.checkIsLastInsideOrBeforeBlock(child)) {
+								child.value = child.value.replace(/[\s\n]+$/g, '');
+							}
+						}
+						
+						if (child.value == '') {
+							this.removeNode(child);
 						}
 					}
 				}
@@ -196,6 +195,42 @@ module pml {
 					for (var i = 0, n = node.children.length; i < n; i++) {
 						this.simplify(node.children[i]);
 					}
+				}
+			}
+		}
+		
+		protected checkIsFirstInsideOrAfterBlock(node: Node): boolean {
+			if (!node) return true;
+			var unignoredPreviousSibling = this.getUnignoredPreviousSibling(node);
+			if (unignoredPreviousSibling) {
+				if (this.checkIsBlock(unignoredPreviousSibling)) {
+					return true;
+				} else {
+					return false;
+				}
+			} else {
+				if (this.checkIsBlock(node.parent)) {
+					return true;
+				} else {
+					return this.checkIsFirstInsideOrAfterBlock(node.parent);
+				}
+			}
+		}
+		
+		protected checkIsLastInsideOrBeforeBlock(node: Node): boolean {
+			if (!node) return true;
+			var unignoredNextSibling = this.getUnignoredNextSibling(node);
+			if (unignoredNextSibling) {
+				if (this.checkIsBlock(unignoredNextSibling)) {
+					return true;
+				} else {
+					return false;
+				}
+			} else {
+				if (this.checkIsBlock(node.parent)) {
+					return true;
+				} else {
+					return this.checkIsLastInsideOrBeforeBlock(node.parent);
 				}
 			}
 		}
