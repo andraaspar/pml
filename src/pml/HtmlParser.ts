@@ -1,3 +1,4 @@
+/// <reference path='HtmlEntities.ts'/>
 /// <reference path='HtmlHandler.ts'/>
 /// <reference path='Node.ts'/>
 
@@ -39,6 +40,8 @@ module pml {
 			this.setContext(HtmlParserContext.TEXT_NODE);
 			
 			this.parseLoop();
+			
+			this.unescapeEntitiesInNode(rootNode);
 			
 			this.simplify(rootNode);
 			
@@ -331,6 +334,35 @@ module pml {
 			}
 			
 			this.context = newContext;
+		}
+		
+		protected unescapeEntitiesInNode(node: Node): void {
+			if (node.value && !this.checkIsNonReplaceableCharacterTag(node)) {
+				node.value = this.unescapeEntities(node.value);
+			}
+			if (this.hasChildren(node)) {
+				for (var i = 0, n = node.children.length; i < n; i++) {
+					this.unescapeEntitiesInNode(node.children[i]);
+				}
+			}
+		}
+		
+		protected unescapeEntities(src: string): string {
+			return src.replace(/&(#?[a-z0-9]+);/gi, this.unescapeEntitiesCallback);
+		}
+		
+		protected unescapeEntitiesCallback(src: string, name: string, offset: number, all: string): string {
+			if (name.charAt(0) == '#') {
+				if (name.charAt(1) == 'x') {
+					return String.fromCharCode(parseInt(name.slice(2), 16));
+				} else {
+					return String.fromCharCode(parseInt(name.slice(1), 10));
+				}
+			} else if (pml.HtmlEntities.hasOwnProperty(name)) {
+				return pml.HtmlEntities[name];
+			} else {
+				return src;
+			}
 		}
 	}
 }
