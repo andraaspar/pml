@@ -55,7 +55,7 @@ module pml {
 					// Render start tag
 					
 					result += '<';
-					result += illa.StringUtil.escapeHTML(src.name);
+					result += this.escapeHtml(src.name);
 
 					if (src.children) {
 						// Render attributes
@@ -69,11 +69,15 @@ module pml {
 								// Attribute name is not required for old DOCTYPE support
 								
 								if (attributeName) {
-									result += illa.StringUtil.escapeHTML(attributeName);
+									result += this.escapeHtml(attributeName);
 								}
 								if (child.value) {
 									if (attributeName) result += '=';
-									result += '"' + illa.StringUtil.escapeHTML(child.value) + '"';
+									if (child.value.indexOf('"') > -1 && child.value.indexOf("'") == -1) {
+										result += "'" + this.escapeHtml(child.value, "'") + "'";
+									} else {
+										result += '"' + this.escapeHtml(child.value, '"') + '"';
+									}
 								}
 							}
 						}
@@ -106,7 +110,7 @@ module pml {
 					}
 
 					result += '</';
-					result += illa.StringUtil.escapeHTML(src.name);
+					result += this.escapeHtml(src.name);
 					result += '>';
 				}
 
@@ -121,7 +125,7 @@ module pml {
 		protected prepareText(src: Node, indent: string): string {
 			var result = src.value || '';
 			if (!this.checkIsNonReplaceableCharacterTag(src)) {
-				result = illa.StringUtil.escapeHTML(result);
+				result = this.escapeHtml(result, '');
 				if (this.expandLineBreaks && !this.checkIsNoLineBreakExpansionTag(src)) {
 					var breakTag = '<br/>';
 					if (this.prettyPrint && !this.checkIsPreformattedTag(src)) {
@@ -134,6 +138,12 @@ module pml {
 				}
 			}
 			return result;
+		}
+
+		protected escapeHtml(str: string, quotes: string = '"\''): string {
+			return str.replace(new RegExp('[&<>' + quotes + ']', 'g'), function(s) {
+				return illa.StringUtil.CHAR_TO_HTML[s];
+			});
 		}
 
 		getPrettyPrint(): boolean {
