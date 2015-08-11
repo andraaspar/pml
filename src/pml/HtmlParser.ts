@@ -182,20 +182,28 @@ module pml {
 			if (this.hasChildren(node)) {
 				for (var i = 0; i < node.children.length; i++) {
 					var child = node.children[i];
-					var unignoredNextSibling = this.getUnignoredNextSibling(child);
-					var unignoredPreviousSibling = this.getUnignoredPreviousSibling(child);
 					
 					if (child.name == '') {
 						if (child.value == '') {
 							
 							this.removeNode(child);
 							
-						} else if (/^[\s\n]*$/g.test(child.value) && // Has whitespace value only
-							(unignoredPreviousSibling || unignoredNextSibling) && // Has siblings
-							(!unignoredPreviousSibling || this.checkIsBlock(unignoredPreviousSibling)) && // Previous sibling does not exist or is block
-							(!unignoredNextSibling || this.checkIsBlock(unignoredNextSibling))) { // Next sibling does not exist or is block
+						} else if (/^[\s\n]*$/g.test(child.value)) { // Has whitespace value only
 						
-							this.removeNode(child);
+							var unignoredNextSibling = this.getUnignoredNextSibling(child);
+							var unignoredPreviousSibling = this.getUnignoredPreviousSibling(child);
+						
+							if (this.checkIsBlock(node) && // Parent is block
+								(!unignoredPreviousSibling || !unignoredNextSibling)) { // Is first or last child
+								
+								this.removeNode(child);
+								
+							} else if ((unignoredPreviousSibling || unignoredNextSibling) && // Has siblings
+								(!unignoredPreviousSibling || this.checkIsBlock(unignoredPreviousSibling)) && // Previous sibling does not exist or is block
+								(!unignoredNextSibling || this.checkIsBlock(unignoredNextSibling))) { // Next sibling does not exist or is block
+						
+								this.removeNode(child);
+							}
 						}
 					}
 				}

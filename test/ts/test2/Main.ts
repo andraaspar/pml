@@ -3,6 +3,7 @@
 /// <reference path='../../../lib/illa/Log.ts'/>
 
 /// <reference path='../../../src/pml/HtmlParser.ts'/>
+/// <reference path='../../../src/pml/HtmlStringer.ts'/>
 /// <reference path='../../../src/pml/Stringer.ts'/>
 
 module test2 {
@@ -33,6 +34,9 @@ module test2 {
 
 			var stringer = new pml.Stringer();
 			illa.Log.info(stringer.stringify(root));
+			
+			var htmlStringer = new pml.HtmlStringer();
+			illa.Log.info(htmlStringer.stringify(root));
 		}
 	}
 }
