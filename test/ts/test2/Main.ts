@@ -32,7 +32,7 @@ module test2 {
 			
 			console.log(root);
 
-			var stringer = new pml.Stringer();
+			var stringer = new pml.Stringer(['«»', '◄►'], ['•']);
 			illa.Log.info(stringer.stringify(root));
 			
 			var htmlStringer = new pml.HtmlStringer();

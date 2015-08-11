@@ -54,18 +54,6 @@ module pml {
 				
 				switch (this.context) {
 					case HtmlParserContext.TAG_NAME:
-						if (char == '>') {
-							this.setContext(HtmlParserContext.TEXT_NODE);
-						} else if (char == '/') {
-							this.returnToParent();
-							this.charId++;
-							this.setContext(HtmlParserContext.TEXT_NODE);
-						} else if (/[\s\n]/.test(char)) {
-							this.setContext(HtmlParserContext.TAG_SPACE);
-						} else {
-							this.currentNode.name += char;
-						}
-						break;
 					case HtmlParserContext.TAG_SPACE:
 						if (char == '>') {
 							this.setContext(HtmlParserContext.TEXT_NODE);
@@ -73,34 +61,19 @@ module pml {
 							this.returnToParent();
 							this.charId++;
 							this.setContext(HtmlParserContext.TEXT_NODE);
-						} else if (/[^\s\n\/]/.test(char)) {
-							this.setContext(HtmlParserContext.ATTRIBUTE_NAME);
+						} else {
+							if (/[\s\n]/.test(char)) {
+								this.setContext(HtmlParserContext.TAG_SPACE);
+							} else {
+								if (this.getContext() == HtmlParserContext.TAG_NAME) {
+									this.currentNode.name += char;
+								} else {
+									this.setContext(HtmlParserContext.ATTRIBUTE_NAME);
+								}
+							}
 						}
 						break;
 					case HtmlParserContext.ATTRIBUTE_NAME:
-						if (char == '=') {
-							if (/[\s\n]/.test(this.src[this.charId + 1])) {
-								this.setContext(HtmlParserContext.ATTRIBUTE_SPACE_AFTER);
-							} else {
-								this.charId++;
-								this.setContext(HtmlParserContext.ATTRIBUTE_VALUE);
-							}
-						} else if (/[\s\n]/.test(char)) {
-							this.setContext(HtmlParserContext.ATTRIBUTE_SPACE_BEFORE);
-						} else if (char == '>') {
-							this.returnToParent();
-							this.setContext(HtmlParserContext.TEXT_NODE);
-						} else if (char == '/') {
-							this.returnToParent();
-							this.returnToParent();
-							this.charId++;
-							this.setContext(HtmlParserContext.TEXT_NODE);
-						} else if (/[\s\n]/.test(char)) {
-							this.setContext(HtmlParserContext.ATTRIBUTE_SPACE_BEFORE);
-						} else {
-							this.currentNode.name += char;
-						}
-						break;
 					case HtmlParserContext.ATTRIBUTE_SPACE_BEFORE:
 					case HtmlParserContext.ATTRIBUTE_SPACE_AFTER:
 						if (char == '=') {
@@ -110,6 +83,8 @@ module pml {
 								this.charId++;
 								this.setContext(HtmlParserContext.ATTRIBUTE_VALUE);
 							}
+						} else if (this.getContext() == HtmlParserContext.ATTRIBUTE_NAME && /[\s\n]/.test(char)) {
+							this.setContext(HtmlParserContext.ATTRIBUTE_SPACE_BEFORE);
 						} else if (char == '>') {
 							this.returnToParent();
 							this.setContext(HtmlParserContext.TEXT_NODE);
@@ -118,12 +93,16 @@ module pml {
 							this.returnToParent();
 							this.charId++;
 							this.setContext(HtmlParserContext.TEXT_NODE);
-						} else if (!/\s/.test(char)) {
-							if (this.getContext() == HtmlParserContext.ATTRIBUTE_SPACE_BEFORE) {
-								this.returnToParent();
-								this.setContext(HtmlParserContext.ATTRIBUTE_NAME);
-							} else {
-								this.setContext(HtmlParserContext.ATTRIBUTE_VALUE);
+						} else {
+							if (this.getContext() == HtmlParserContext.ATTRIBUTE_NAME) {
+								this.currentNode.name += char;
+							} else if (!/\s/.test(char)) {
+								if (this.getContext() == HtmlParserContext.ATTRIBUTE_SPACE_BEFORE) {
+									this.returnToParent();
+									this.setContext(HtmlParserContext.ATTRIBUTE_NAME);
+								} else {
+									this.setContext(HtmlParserContext.ATTRIBUTE_VALUE);
+								}
 							}
 						}
 						break;
@@ -171,7 +150,7 @@ module pml {
 					case HtmlParserContext.CLOSING_TAG:
 						if (char == '>') {
 							this.setContext(HtmlParserContext.TEXT_NODE);
-						} else {
+						} else if (/[^\s\n]/.test(char)) {
 							this.closingTagName += char;
 						}
 						break;
@@ -296,9 +275,6 @@ module pml {
 					this.returnToParent();
 					break;
 				case HtmlParserContext.TEXT_NODE:
-//					if (/^[\s\n]*$/g.test(this.currentNode.value)) {
-//						this.currentNode.value = ' ';
-//					}
 					this.returnToParent();
 					break;
 			}
