@@ -1,3 +1,4 @@
+/// <reference path='HtmlHandler.ts'/>
 /// <reference path='Node.ts'/>
 
 module pml {
@@ -13,7 +14,7 @@ module pml {
 		TEXT_NODE
 	}
 	
-	export class HtmlParser {
+	export class HtmlParser extends HtmlHandler {
 		
 		private charId: number;
 		private context: HtmlParserContext;
@@ -23,7 +24,7 @@ module pml {
 		private closingTagName: string;
 		
 		constructor() {
-			
+			super();
 		}
 		
 		parse(src: string): Node {
@@ -38,9 +39,6 @@ module pml {
 			this.setContext(HtmlParserContext.TEXT_NODE);
 			
 			this.parseLoop();
-			
-			// Remove last empty text node
-			this.setContext(undefined);
 			
 			this.simplify(rootNode);
 			
@@ -106,6 +104,7 @@ module pml {
 							if (/[\s\n]/.test(this.src[this.charId + 1])) {
 								this.setContext(HtmlParserContext.ATTRIBUTE_SPACE_AFTER);
 							} else {
+								this.charId++;
 								this.setContext(HtmlParserContext.ATTRIBUTE_VALUE);
 							}
 						} else if (char == '>') {
@@ -179,12 +178,27 @@ module pml {
 			}
 		}
 		
-		protected hasChildren(node: Node): boolean {
-			return node.children && node.children.length > 0;
-		}
-		
 		protected simplify(node: Node): void {
 			if (this.hasChildren(node)) {
+				for (var i = 0; i < node.children.length; i++) {
+					var child = node.children[i];
+					var unignoredNextSibling = this.getUnignoredNextSibling(child);
+					var unignoredPreviousSibling = this.getUnignoredPreviousSibling(child);
+					
+					if (child.name == '') {
+						if (child.value == '') {
+							
+							this.removeNode(child);
+							
+						} else if (/^[\s\n]*$/g.test(child.value) && // Has whitespace value only
+							(unignoredPreviousSibling || unignoredNextSibling) && // Has siblings
+							(!unignoredPreviousSibling || this.checkIsBlock(unignoredPreviousSibling)) && // Previous sibling does not exist or is block
+							(!unignoredNextSibling || this.checkIsBlock(unignoredNextSibling))) { // Next sibling does not exist or is block
+						
+							this.removeNode(child);
+						}
+					}
+				}
 				if (node.children.length == 1 && node.children[0].name == '' && !this.hasChildren(node.children[0])) {
 					node.value = node.children[0].value;
 					node.children = undefined;
@@ -216,11 +230,25 @@ module pml {
 			this.currentNode = this.currentNode.parent;
 		}
 		
+		protected removeNode(node: Node): void {
+			if (node.parent) {
+				node.parent.children.splice(illa.ArrayUtil.indexOf(node.parent.children, node), 1);
+				node.parent = undefined;
+			}
+			if (node.previousSibling) {
+				node.previousSibling.nextSibling = node.nextSibling;
+			}
+			if (node.nextSibling) {
+				node.nextSibling.previousSibling = node.previousSibling;
+			}
+			node.previousSibling = node.nextSibling = undefined;
+		}
+		
 		protected getContext(): HtmlParserContext {
 			return this.context;
 		}
 		
-		protected setContext(v: HtmlParserContext): void {
+		protected setContext(newContext: HtmlParserContext): void {
 			
 			var char = this.src[this.charId];
 			
@@ -229,15 +257,16 @@ module pml {
 				case HtmlParserContext.ATTRIBUTE_SPACE_AFTER:
 				case HtmlParserContext.ATTRIBUTE_SPACE_BEFORE:
 				case HtmlParserContext.ATTRIBUTE_VALUE:
+				case HtmlParserContext.COMMENT:
 				case HtmlParserContext.TAG_NAME:
 				case HtmlParserContext.TAG_SPACE:
-					if (v == HtmlParserContext.TEXT_NODE) {
-						switch (this.currentNode.name.charAt(0)) {
-							case '!':
-							case '?':
-								// Auto-close tags starting with the chars above
-								this.returnToParent();
-								break;
+					if (newContext == HtmlParserContext.TEXT_NODE) {
+						var firstChar = this.currentNode.name.charAt(0);
+						if (firstChar == '!' ||
+							firstChar == '?' ||
+							!this.checkHasEnd(this.currentNode)) {
+							// Auto-close
+							this.returnToParent();
 						}
 					}
 					break;
@@ -256,17 +285,14 @@ module pml {
 					this.returnToParent();
 					break;
 				case HtmlParserContext.TEXT_NODE:
-					if (/^[\s\n]*$/g.test(this.currentNode.value)) {
-						this.currentNode.parent.children.pop();
-						if (this.currentNode.previousSibling) {
-							this.currentNode.previousSibling.nextSibling = undefined;
-						}
-					}
+//					if (/^[\s\n]*$/g.test(this.currentNode.value)) {
+//						this.currentNode.value = ' ';
+//					}
 					this.returnToParent();
 					break;
 			}
 			
-			switch (v) {
+			switch (newContext) {
 				case HtmlParserContext.TEXT_NODE:
 				case HtmlParserContext.TAG_NAME:
 				case HtmlParserContext.ATTRIBUTE_NAME:
@@ -275,7 +301,7 @@ module pml {
 					break;
 			}
 			
-			switch (v) {
+			switch (newContext) {
 				case HtmlParserContext.ATTRIBUTE_NAME:
 					this.currentNode.name += '@';
 					this.currentNode.name += char;
@@ -291,9 +317,12 @@ module pml {
 				case HtmlParserContext.CLOSING_TAG:
 					this.closingTagName = '';
 					break;
+				case HtmlParserContext.COMMENT:
+					this.currentNode.name = '!--';
+					break;
 			}
 			
-			this.context = v;
+			this.context = newContext;
 		}
 	}
 }
