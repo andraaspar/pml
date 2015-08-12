@@ -1,6 +1,6 @@
 {
   "name": "pml",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "ignore": [
     "**/.*",
@@ -13,7 +13,7 @@
     "package.json"
   ],
   "devDependencies": {
-    "berek": "andraaspar/berek#v1.8"
+    "node-d-ts": "andraaspar/node-d-ts#v2"
   },
   "dependencies": {
     "illa": "andraaspar/illa#v2.3"

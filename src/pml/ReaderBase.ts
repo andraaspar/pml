@@ -35,14 +35,14 @@ module pml {
 			var names = ['Comment start', 'Node start', 'Name end', 'Node end', 'Comment end'];
 			for (var i = 0, n = delimiters.length; i < n; i++) {
 				if (!delimiters[i]) {
-					this.addMessage(new Message(MessageKind.ERROR, 0, i, names[i] + ' delimiter is missing.'));
+					this.addMessage(new Message(MessageKind.ERROR, 1, i + 1, names[i] + ' delimiter is missing.'));
 				}
 				if (/[\s \r\n]/.test(delimiters[i])) {
-					this.addMessage(new Message(MessageKind.ERROR, 0, i, names[i] + ' delimiter is a whitespace or line break character.'));
+					this.addMessage(new Message(MessageKind.ERROR, 1, i + 1, names[i] + ' delimiter is a whitespace or line break character.'));
 				}
 				var i2 = illa.ArrayUtil.indexOf(delimiters, delimiters[i], i + 1);
 				if (i2 > -1) {
-					this.addMessage(new Message(MessageKind.ERROR, 0, i, names[i] + ' delimiter clashes with ' + names[i2] + ' delimiter.'));
+					this.addMessage(new Message(MessageKind.ERROR, 1, i + 1, names[i] + ' delimiter clashes with ' + names[i2].toLowerCase() + ' delimiter.'));
 				}
 			}
 		}
