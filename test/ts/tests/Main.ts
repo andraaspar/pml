@@ -3,12 +3,14 @@
 
 /// <reference path='../mocha.d.ts'/>
 /// <reference path='../chai.d.ts'/>
+/// <reference path='../sinon.d.ts'/>
 
 /// <reference path='../../../src/pml/Parser.ts'/>
 /// <reference path='../../../src/pml/Stringer.ts'/>
 
 if (illa.GLOBAL.process) {
 	illa.GLOBAL.chai = require('chai');
+	illa.GLOBAL.sinon = require('sinon');
 }
 var expect = chai.expect;
 
@@ -52,20 +54,66 @@ describe('pml.Parser', function() {
 				}).to.throw('1:3: Name end delimiter is missing.');
 			});
 		});
+		context('invalid pml', function() {
+			it('should warn about ignored content', function() {
+				var consoleWarnStub = sinon.stub(console, 'warn');
+				
+				var expected = createNode('');
+				createLeaf('foo', '', expected);
+				createLeaf('bar', '', expected);
+				
+				var result = pml.Parser.parse('{[|]}[foo|]Ignored[bar|]');
+				
+				expect(consoleWarnStub.called).to.be.true;
+				expect(consoleWarnStub.callCount).to.equal(1);
+				expect(consoleWarnStub.getCall(0).args[0]).to.equal('1:12: Node has both children and value. Value will not be parsed.');
+				expect(result).to.deep.equal(expected);
+				
+				consoleWarnStub.restore();
+			});
+			it('should throw on missing delimiters', function() {
+				expect(function() {
+					pml.Parser.parse('{[|]}[foo]');
+				}).to.throw('1:10: Invalid node end delimiter, expected: name end delimiter.');
+				expect(function() {
+					pml.Parser.parse('{[|]}[foo|');
+				}).to.throw('1:10: Missing node end delimiter.');
+				expect(function() {
+					pml.Parser.parse('{[|]}[foo');
+				}).to.throw('1:9: Missing name end delimiter.');
+				expect(function() {
+					pml.Parser.parse('{[|]}{');
+				}).to.throw('1:6: Missing comment end delimiter.');
+			});
+			it('should throw on invalid delimiter location', function() {
+				expect(function() {
+					pml.Parser.parse('{[|]}[foo[bar|]|]');
+				}).to.throw('1:10: Invalid node start delimiter, expected: name end delimiter.');
+				expect(function() {
+					pml.Parser.parse('{[|]}[foo|bar|baz]');
+				}).to.throw('1:14: Invalid name end delimiter in value.');
+				expect(function() {
+					pml.Parser.parse('{[|]}|');
+				}).to.throw('1:6: Invalid name end delimiter in value.');
+				expect(function() {
+					pml.Parser.parse('{[|]}]');
+				}).to.throw('1:6: Invalid location for node end delimiter.');
+			});
+		});
 		context('valid pml', function() {
 			it('should parse pml', function() {
 				var result = pml.Parser.parse(`«◄•►»
 ◄Árvíztűrő tükörfúrógép•Flood-resistant mirror drill►
 ◄•►
 ◄root•
-	◄leaf-1•A►
+	◄leaf-1«1»•A«BC»►
 	«Ign«ore» me.»
 	◄leaf-2•
 		◄•B►
 		◄•b►
+		«◄•d►»
 	►
 	◄leaf-3•C►
-	Ignore.
 ►
 `);
 				var expected = createNode('');

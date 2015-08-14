@@ -8,6 +8,7 @@
     "grunt-kapocs": "2.0.3",
     "grunt-shell": "1.1.2",
     "mocha": "^2.2.5",
+    "sinon": "^1.15.4",
     "typescript": "^1.5.3"
   }
 }

@@ -125,7 +125,7 @@ module pml {
 
 								} else if (char == nodeStart) {
 
-									this.addLinterError('Invalid location for node start delimiter.');
+									this.addLinterError('Invalid node start delimiter, expected: name end delimiter.');
 									
 									this.isName = false;
 									this.charId--;
@@ -133,7 +133,7 @@ module pml {
 
 								} else if (char == nodeEnd) {
 
-									this.addLinterError('Invalid location for node end delimiter.');
+									this.addLinterError('Invalid node end delimiter, expected: name end delimiter.');
 									
 									this.isName = false;
 									this.charId--;
@@ -147,14 +147,14 @@ module pml {
 								
 								if (char == nameEnd) {
 
-									this.addLinterError('Invalid location for name end delimiter.');
+									this.addLinterError('Invalid name end delimiter in value.');
 
 								} else if (char == nodeStart) {
 
 									this.hasChildren[this.level] = true;
 									
 									if (this.hasValue[this.level]) {
-										this.addLinterWarning('Node has both children and value.');
+										this.addLinterWarning('Node has both children and value. Value will not be parsed.');
 									}
 									
 									this.level++;
@@ -178,7 +178,7 @@ module pml {
 									this.hasValue[this.level] = true;
 									
 									if (this.hasChildren[this.level]) {
-										this.addLinterWarning('Node has both children and value.');
+										this.addLinterWarning('Node has both children and value. Value will not be parsed.');
 									}
 
 								}
@@ -190,11 +190,19 @@ module pml {
 				}
 			}
 			
+			// Constrain lineId and charId to last values in document before adding messages
+			this.lineId--;
+			this.charId--;
+			
 			if (this.commentLevel > 0) {
-				this.addLinterWarning('Comment not closed.');
+				this.addLinterError('Missing comment end delimiter.');
 			}
 			if (this.level > 0) {
-				this.addLinterError('Node not closed.');
+				if (this.isName) {
+					this.addLinterError('Missing name end delimiter.');
+				} else {
+					this.addLinterError('Missing node end delimiter.');
+				}
 			}
 		}
 	}
