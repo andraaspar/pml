@@ -44,18 +44,6 @@ module.exports = function(grunt) {
 					dot: true,
 					src: 'chai.js',
 					dest: 'tmp/_assets/script'
-				}, {
-					expand: true,
-					cwd: 'node_modules/sinon/lib',
-					dot: true,
-					src: '**',
-					dest: 'tmp/_assets/script'
-				}, {
-					expand: true,
-					cwd: 'node_modules/requirejs',
-					dot: true,
-					src: 'require.js',
-					dest: 'tmp/_assets/script'
 				}]
 			},
 			update: {
