@@ -5,8 +5,6 @@
 module pml {
 	export class Stringer {
 		
-		private static instance: Stringer;
-		
 		private commentStart: string;
 		private nodeStart: string;
 		private nameEnd: string;
@@ -24,15 +22,8 @@ module pml {
 
 		}
 		
-		static getInstance(): Stringer {
-			if (!this.instance) {
-				this.instance = new Stringer();
-			}
-			return this.instance;
-		}
-		
 		static stringify(src: Node): string {
-			return this.getInstance().stringifyInternal(src);
+			return new Stringer().stringifyInternal(src);
 		}
 		
 		stringify(src: Node): string {
@@ -63,11 +54,6 @@ module pml {
 			if (this.hasChildren(src)) {
 				for (var i = 0, n = src.children.length; i < n; i++) {
 					result += this.stringifyInternal(src.children[i], level + 1);
-				}
-				
-				if (this.prettyPrint) {
-					// Indent node end if this is not the root
-					if (src.parent) result += indent;
 				}
 			} else {
 				result += src.value;
@@ -130,7 +116,7 @@ module pml {
 		}
 		
 		private checkSeparatorIsValid(separators: string[], separator: string): boolean {
-			if (!separator || separator.length != 1 || /[\s \r\n]/.test(separator)) {
+			if (!separator || separator.length != 1 || /[\s\u00a0\u00ad\r\n]/.test(separator)) {
 				return false;
 			}
 			var index = illa.ArrayUtil.indexOf(separators, separator);
@@ -239,7 +225,7 @@ module pml {
 		}
 		
 		private getNewSeparator(separators: string[]): string {
-			var highestCharCode = '┌'.charCodeAt(0);
+			var highestCharCode = '\u00a0'.charCodeAt(0);
 			for (var i = 0, n = separators.length; i < n; i++) {
 				var separator = separators[i];
 				highestCharCode = Math.max(highestCharCode, (separator ? separator.charCodeAt(0) : 0));
