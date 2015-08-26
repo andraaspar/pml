@@ -7,9 +7,5 @@
 /// <reference path='../../../src/pml/Stringer.ts'/>
 
 /// <reference path='NodeHelpers.ts'/>
-
 /// <reference path='ParserTests.ts'/>
 /// <reference path='StringerTests.ts'/>
-
-describeParserTests();
-describeStringerTests();
