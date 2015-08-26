@@ -3,7 +3,7 @@ module.exports = function(grunt) {
 	
 	grunt.initConfig({
 			
-		KAPOCS_PATTERN: ['**', '!_INFO'],
+		KAPOCS_PATTERN: ['**'],
 		
 		clean: {
 			compile: [
@@ -26,24 +26,6 @@ module.exports = function(grunt) {
 					dot: true,
 					src: '<%= KAPOCS_PATTERN %>',
 					dest: 'build'
-				}, {
-					expand: true,
-					cwd: 'node_modules/mocha',
-					dot: true,
-					src: 'mocha.js',
-					dest: 'tmp/_assets/script'
-				}, {
-					expand: true,
-					cwd: 'node_modules/mocha',
-					dot: true,
-					src: 'mocha.css',
-					dest: 'tmp/_assets/style'
-				}, {
-					expand: true,
-					cwd: 'node_modules/chai',
-					dot: true,
-					src: 'chai.js',
-					dest: 'tmp/_assets/script'
 				}]
 			},
 			update: {
@@ -112,8 +94,8 @@ module.exports = function(grunt) {
 			}
 		},
 		shell: {
-			mocha: {
-				command: '"node_modules/.bin/mocha" --reporter dot "build/script/tests.*.js"'
+			jasmine: {
+				command: '"node_modules/.bin/jasmine"'
 			},
 			update: {
 				command: [
@@ -138,7 +120,7 @@ module.exports = function(grunt) {
 		'copy:tests',
 		'shell:tests',
 		'kapocs:tests',
-		'shell:mocha',
+		'shell:jasmine',
 	]);
 	grunt.registerTask('update', [
 		'shell:update',

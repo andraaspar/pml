@@ -15,7 +15,7 @@ function describeStringerTests(): void {
 				
 				var result = pml.Stringer.stringify(data);
 				
-				expect(result).to.equal(`{[|]}
+				expect(result).toEqual(`{[|]}
 [Árvíztűrő tükörfúrógép|Flood-resistant mirror drill]
 [|]
 [root|
@@ -32,21 +32,21 @@ function describeStringerTests(): void {
 				createLeaf('', '|', data);
 				
 				var result = pml.Stringer.stringify(data);
-				expect(result).to.equal('{[\\]}\n[\\|]');
+				expect(result).toEqual('{[\\]}\n[\\|]');
 			});
 			it('should find new comment delimiters when the current is used by the data', function() {
 				var data = createNode('');
 				createLeaf('', '{', data);
 				
 				var result = pml.Stringer.stringify(data);
-				expect(result).to.equal('[(|)]\n(|{)');
+				expect(result).toEqual('[(|)]\n(|{)');
 			});
 			it('should find new tag delimiters when the current is used by the data', function() {
 				var data = createNode('');
 				createLeaf('', ']', data);
 				
 				var result = pml.Stringer.stringify(data);
-				expect(result).to.equal('{(|)}\n(|])');
+				expect(result).toEqual('{(|)}\n(|])');
 			});
 		});
 		describe('.prototype.stringify()', function() {
@@ -55,28 +55,28 @@ function describeStringerTests(): void {
 				createLeaf('', '|', data);
 				
 				var result = new pml.Stringer(['{}', '[]'], ['|', '=']).stringify(data);
-				expect(result).to.equal('{[=]}\n[=|]');
+				expect(result).toEqual('{[=]}\n[=|]');
 			});
 			it('should find a new name end delimiter even when out of options', function() {
 				var data = createNode('');
 				createLeaf('', '|', data);
 				
 				var result = new pml.Stringer(['{}', '[]'], ['|']).stringify(data);
-				expect(result).to.equal('{[¡]}\n[¡|]');
+				expect(result).toEqual('{[¡]}\n[¡|]');
 			});
 			it('should find new comment delimiters when the current is used by the data', function() {
 				var data = createNode('');
 				createLeaf('', '{', data);
 				
 				var result = new pml.Stringer(['{}', '[]', '«»'], ['|']).stringify(data);
-				expect(result).to.equal('[«|»]\n«|{»');
+				expect(result).toEqual('[«|»]\n«|{»');
 			});
 			it('should find new tag delimiters when the current is used by the data', function() {
 				var data = createNode('');
 				createLeaf('', ']', data);
 				
 				var result = new pml.Stringer(['{}', '[]', '«»'], ['|']).stringify(data);
-				expect(result).to.equal('{«|»}\n«|]»');
+				expect(result).toEqual('{«|»}\n«|]»');
 			});
 		});
 	});
