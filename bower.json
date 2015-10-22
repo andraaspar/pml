@@ -16,6 +16,6 @@
     "node-d-ts": "andraaspar/node-d-ts#v2"
   },
   "dependencies": {
-    "illa": "andraaspar/illa#v2.3"
+    "illa": "andraaspar/illa#v2.4"
   }
 }

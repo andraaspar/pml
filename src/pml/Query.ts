@@ -1,0 +1,423 @@
+/// <reference path='../../lib/illa/StringUtil.ts'/>
+/// <reference path='Node.ts'/>
+
+module pml {
+	export class Query {
+		
+		private nodes: Node[];
+		
+		constructor(nodeOrNodes: Node|Node[]|Query) {
+			if (nodeOrNodes instanceof Query) {
+				this.nodes = nodeOrNodes.nodes;
+			} else if (illa.isArray(nodeOrNodes)) {
+				this.nodes = nodeOrNodes;
+			} else {
+				this.nodes = [<Node>nodeOrNodes];
+			}
+		}
+		
+		getNodes(): Node[] {
+			return this.nodes;
+		}
+		
+		getLength(): number {
+			return this.nodes.length;
+		}
+		
+		getName(): string {
+			if (this.nodes[0]) {
+				return this.nodes[0].name;
+			} else {
+				return undefined;
+			}
+		}
+		
+		setName(name: string): void {
+			for (var i = 0, n = this.nodes.length; i < n; i++) {
+				var node = this.nodes[i];
+				node.name = name;
+			}
+		}
+		
+		getValue(): string {
+			return Query.getValue(this.nodes[0]);
+		}
+		
+		setValue(value: string): void {
+			for (var i = 0, n = this.nodes.length; i < n; i++) {
+				var node = this.nodes[i];
+				Query.setValue(node, value);
+			}
+		}
+		
+		getNames(): string[] {
+			var result: string[] = [];
+			for (var i = 0, n = this.nodes.length; i < n; i++) {
+				var node = this.nodes[i];
+				result.push(node.name);
+			}
+			return result;
+		}
+		
+		getValues(): string[] {
+			var result: string[] = [];
+			for (var i = 0, n = this.nodes.length; i < n; i++) {
+				var node = this.nodes[i];
+				var value = Query.getValue(node);
+				if (illa.isString(value)) result.push(value);
+			}
+			return result;
+		}
+		
+		getLeaves(): Query {
+			var result: Node[] = [];
+			for (var i = 0, n = this.nodes.length; i < n; i++) {
+				var node = this.nodes[i];
+				if (Query.getIsLeaf(node)) result.push(node);
+			}
+			return new Query(result);
+		}
+		
+		getBranches(): Query {
+			var result: Node[] = [];
+			for (var i = 0, n = this.nodes.length; i < n; i++) {
+				var node = this.nodes[i];
+				if (!Query.getIsLeaf(node)) result.push(node);
+			}
+			return new Query(result);
+		}
+		
+		getDescendants(name?: string, value?: string, childrenOnly?: boolean): Query {
+			var result: Node[] = [];
+			for (var i = 0, n = this.nodes.length; i < n; i++) {
+				var node = this.nodes[i];
+				result = result.concat(Query.getDescendantNodes(node, name, value, childrenOnly));
+			}
+			result = this.removeDoubles(result);
+			return new Query(result);
+		}
+		
+		getChildren(name?: string, value?: string): Query {
+			return this.getDescendants(name, value, true);
+		}
+		
+		getParent(name?: string, value?: string): Query {
+			var result: Node[] = [];
+			for (var i = 0, n = this.nodes.length; i < n; i++) {
+				var node = this.nodes[i];
+				if (Query.getDoesMatch(node.parent, name, value)) {
+					result.push(node.parent);
+				}
+			}
+			result = this.removeDoubles(result);
+			return new Query(result);
+		}
+		
+		getParents(name?: string, value?: string): Query {
+			var result: Node[] = [];
+			for (var i = 0, n = this.nodes.length; i < n; i++) {
+				var node = this.nodes[i];
+				result.concat(Query.getParentNodes(node, name));
+			}
+			result = this.removeDoubles(result);
+			return new Query(result);
+		}
+		
+		getClosest(name?: string): Query {
+			var result: Node[] = [];
+			for (var i = 0, n = this.nodes.length; i < n; i++) {
+				var node = this.nodes[i];
+				var closest = Query.getClosestNode(node, name);
+				if (closest) result.push(closest);
+			}
+			result = this.removeDoubles(result);
+			return new Query(result);
+		}
+		
+		getByIndex(index: number): Query {
+			var node = this.nodes[index];
+			if (node) {
+				return new Query([node]);
+			} else {
+				return new Query([]);
+			}
+		}
+		
+		getFirst(): Query {
+			return this.getByIndex(0);
+		}
+		
+		getLast(): Query {
+			return this.getByIndex(this.nodes.length - 1);
+		}
+		
+		getRoot(): Query {
+			var current = this.nodes[0];
+			while (current.parent) {
+				current = current.parent;
+			}
+			return new Query([current]);
+		}
+		
+		getIndex(): number {
+			return Query.getIndex(this.nodes[0]);
+		}
+		
+		getPreviousAll(name?: string, value?: string, checkFirstOnly?: boolean, breakOnFirstResult?: boolean): Query {
+			var result: Node[] = [];
+			for (var i = 0, n = this.nodes.length; i < n; i++) {
+				var node = this.nodes[i];
+				for (var index = Query.getIndex(node) - 1; index >= 0; index--) {
+					var sibling = node.parent.children[index];
+					if (Query.getDoesMatch(sibling, name, value)) {
+						result.push(sibling);
+						if (breakOnFirstResult) break;
+					}
+					if (checkFirstOnly) break;
+				}
+			}
+			result = this.removeDoubles(result);
+			return new Query(result);
+		}
+		
+		getPrevious(name?: string, value?: string): Query {
+			return this.getPreviousAll(name, value, true);
+		}
+		
+		getPreviousUntil(name: string, value?: string): Query {
+			return this.getPreviousAll(name, value, false, true);
+		}
+		
+		getNextAll(name?: string, value?: string, checkFirstOnly?: boolean, breakOnFirstResult?: boolean): Query {
+			var result: Node[] = [];
+			for (var i = 0, n = this.nodes.length; i < n; i++) {
+				var node = this.nodes[i];
+				var index = Query.getIndex(node);
+				if (index >= 0) {
+					var length = node.parent ? node.parent.children.length : 0;
+					for (index += 1; index < length; index++) {
+						var sibling = node.parent.children[index];
+						if (Query.getDoesMatch(sibling, name, value)) {
+							result.push(sibling);
+							if (breakOnFirstResult) break;
+						}
+						if (checkFirstOnly) break;
+					}
+				}
+			}
+			result = this.removeDoubles(result);
+			return new Query(result);
+		}
+		
+		getNext(name?: string, value?: string): Query {
+			return this.getNextAll(name, value, true);
+		}
+		
+		getNextUntil(name: string, value?: string): Query {
+			return this.getNextAll(name, value, false, true);
+		}
+		
+		remove(): void {
+			for (var i = 0, n = this.nodes.length; i < n; i++) {
+				var node = this.nodes[i];
+				Query.removeNode(node);
+			}
+		}
+		
+		add(childOrChildren: Node|Node[]|Query, index?: number): void {
+			var toAdd: Node[];
+			if (childOrChildren instanceof Node) {
+				toAdd = [childOrChildren];
+			} else if (childOrChildren instanceof Query) {
+				toAdd = childOrChildren.nodes;
+			} else {
+				toAdd = <Node[]>childOrChildren;
+			}
+			for (var i = 0, n = this.nodes.length; i < n; i++) {
+				var parent = this.nodes[i];
+				for (var j = 0, o = toAdd.length; j < o; j++) {
+					var child = toAdd[j];
+					if (i > 1) child = Query.cloneNode(child);
+					Query.addChildNode(parent, child, index);
+				}
+			}
+		}
+		
+		protected removeDoubles<T>(arr: T[]): T[] {
+			var result: T[] = [];
+			for (var i = 0, n = arr.length; i < n; i++) {
+				var item = arr[i];
+				if (result.indexOf(item) < 0) {
+					result.push(item);
+				}
+			}
+			return result;
+		}
+		
+		static getValue(node: Node): string {
+			if (this.getIsLeaf(node)) {
+				return illa.StringUtil.castNicely(node.value);
+			} else {
+				return undefined;
+			}
+		}
+		
+		static setValue(node: Node, value: string): void {
+			this.removeChildNodes(node);
+			node.value = value;
+		}
+		
+		static cloneNode(node: Node): Node {
+			var result = new Node();
+			result.name = node.name;
+			if (this.getIsLeaf(node)) {
+				result.value = node.value;
+			} else {
+				result.children = [];
+				for (var i = 0, n = node.children.length; i < n; i++) {
+					var child = node.children[i];
+					result.children.push(this.cloneNode(child));
+				}
+			}
+			return result;
+		}
+		
+		static getIsLeaf(node: Node): boolean {
+			return !(node.children && node.children.length);
+		}
+		
+		static getIsRoot(node: Node): boolean {
+			return !node.parent;
+		}
+		
+		static getDescendantNodes(node: Node, name?: string, value?: string, childrenOnly = false): Node[] {
+			var testName = illa.isString(name);
+			var testValue = illa.isString(value);
+			if (testName || testValue) {
+				var nodes: Node[] = [];
+				var children = this.getChildNodes(node);
+				for (var i = 0, n = children.length; i < n; i++) {
+					var child = children[i];
+					if (this.getDoesMatch(node, name, value)) {
+						nodes.push(node);
+					}
+					if (!childrenOnly) nodes = nodes.concat(this.getDescendantNodes(child, name, value));
+				}
+				return nodes;
+			} else {
+				if (this.getIsLeaf(node)) {
+					return [];
+				} else {
+					return node.children;
+				}
+			}
+		}
+		
+		static getChildNodes(node: Node, name?: string, value?: string): Node[] {
+			return this.getDescendantNodes(node, name, value, true);
+		}
+		
+		static getDoesMatch(node: Node, name?: string, value?: string): boolean {
+			var testName = illa.isString(name);
+			var testValue = illa.isString(value);
+			if (testValue && !this.getIsLeaf(node)) {
+				return false;
+			}
+			if (testName && testValue) {
+				return node.name == name && this.getValue(node) == value;
+			} else if (testName) {
+				return node.name == name;
+			} else if (testValue) {
+				return this.getValue(node) == value;
+			} else {
+				return true;
+			}
+		}
+		
+		static getParentNodes(node: Node, name?: string): Node[] {
+			var result: Node[] = [];
+			var currentNode = node;
+			while (!this.getIsRoot(currentNode)) {
+				currentNode = currentNode.parent;
+				if (this.getDoesMatch(currentNode, name)) {
+					result.push(currentNode);
+				}
+			}
+			return result;
+		}
+		
+		static getClosestNode(node: Node, name: string): Node {
+			if (this.getDoesMatch(node, name)) {
+				return node;
+			} else if (this.getIsRoot(node)) {
+				return undefined;
+			} else {
+				return this.getClosestNode(node.parent, name);
+			}
+		}
+		
+		static getIndex(node: Node): number {
+			var result = -1;
+			if (node && node.parent) {
+				result = illa.ArrayUtil.indexOf(node.parent.children, node);
+			}
+			return result;
+		}
+		
+		static removeNode(node: Node): void {
+			if (node) {
+				if (node.parent) {
+					var index = this.getIndex(node);
+					if (index >= 0) {
+						var siblings = node.parent.children;
+						var previousSibling = siblings[index - 1];
+						var nextSibling = siblings[index + 1];
+						if (previousSibling) previousSibling.nextSibling = nextSibling;
+						if (nextSibling) nextSibling.previousSibling = previousSibling;
+						siblings.splice(index, 1);
+					}
+				}
+				node.parent = node.previousSibling = node.nextSibling = undefined;
+			}
+		}
+		
+		static removeChildNodes(node: Node): void {
+			if (node && node.children) {
+				for (var i = 0, n = node.children.length; i < n; i++) {
+					var child = node.children[i];
+					child.parent = child.previousSibling = child.nextSibling = undefined;
+				}
+				node.children = undefined;
+			}
+		}
+		
+		static hasClosestNode(node: Node, parent: Node): boolean {
+			while (node) {
+				if (node === parent) {
+					return true;
+				}
+				node = node.parent;
+			}
+			return false;
+		}
+		
+		static addChildNode(parent: Node, child: Node, index?: number): void {
+			if (this.hasClosestNode(parent, child)) {
+				throw 'Must not introduce circular reference.';
+			}
+			if (child.parent) this.removeNode(child);
+			if (!parent.children) {
+				parent.children = [];
+			}
+			if (!illa.isNumber(index)) index = parent.children.length;
+			
+			child.previousSibling = parent.children[index - 1];
+			child.nextSibling = parent.children[index];
+			if (child.previousSibling) child.previousSibling.nextSibling = child;
+			if (child.nextSibling) child.nextSibling.previousSibling = child;
+			child.parent = parent;
+			
+			parent.children.splice(index, 0, child);
+		}
+	}
+}

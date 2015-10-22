@@ -43,7 +43,7 @@ module.exports = function(grunt) {
 					dest: 'lib'
 				}, {
 					expand: true,
-					cwd: 'node_modules/typescript/bin',
+					cwd: 'node_modules/typescript/lib',
 					dot: true,
 					src: 'lib.core.es6.d.ts',
 					dest: 'lib'
