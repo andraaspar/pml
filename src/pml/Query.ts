@@ -69,7 +69,7 @@ module pml {
 			return result;
 		}
 		
-		getLeaves(): Query {
+		leaves(): Query {
 			var result: Node[] = [];
 			for (var i = 0, n = this.nodes.length; i < n; i++) {
 				var node = this.nodes[i];
@@ -78,7 +78,7 @@ module pml {
 			return new Query(result);
 		}
 		
-		getBranches(): Query {
+		branches(): Query {
 			var result: Node[] = [];
 			for (var i = 0, n = this.nodes.length; i < n; i++) {
 				var node = this.nodes[i];
@@ -87,7 +87,7 @@ module pml {
 			return new Query(result);
 		}
 		
-		getDescendants(name?: string, value?: string, childrenOnly?: boolean): Query {
+		descendants(name?: string, value?: string, childrenOnly?: boolean): Query {
 			var result: Node[] = [];
 			for (var i = 0, n = this.nodes.length; i < n; i++) {
 				var node = this.nodes[i];
@@ -97,11 +97,11 @@ module pml {
 			return new Query(result);
 		}
 		
-		getChildren(name?: string, value?: string): Query {
-			return this.getDescendants(name, value, true);
+		children(name?: string, value?: string): Query {
+			return this.descendants(name, value, true);
 		}
 		
-		getParent(name?: string, value?: string): Query {
+		parent(name?: string, value?: string): Query {
 			var result: Node[] = [];
 			for (var i = 0, n = this.nodes.length; i < n; i++) {
 				var node = this.nodes[i];
@@ -113,7 +113,7 @@ module pml {
 			return new Query(result);
 		}
 		
-		getParents(name?: string, value?: string): Query {
+		parents(name?: string, value?: string): Query {
 			var result: Node[] = [];
 			for (var i = 0, n = this.nodes.length; i < n; i++) {
 				var node = this.nodes[i];
@@ -123,7 +123,7 @@ module pml {
 			return new Query(result);
 		}
 		
-		getClosest(name?: string): Query {
+		closest(name?: string): Query {
 			var result: Node[] = [];
 			for (var i = 0, n = this.nodes.length; i < n; i++) {
 				var node = this.nodes[i];
@@ -134,7 +134,7 @@ module pml {
 			return new Query(result);
 		}
 		
-		getByIndex(index: number): Query {
+		byIndex(index: number): Query {
 			var node = this.nodes[index];
 			if (node) {
 				return new Query([node]);
@@ -143,15 +143,15 @@ module pml {
 			}
 		}
 		
-		getFirst(): Query {
-			return this.getByIndex(0);
+		first(): Query {
+			return this.byIndex(0);
 		}
 		
-		getLast(): Query {
-			return this.getByIndex(this.nodes.length - 1);
+		last(): Query {
+			return this.byIndex(this.nodes.length - 1);
 		}
 		
-		getRoot(): Query {
+		root(): Query {
 			var current = this.nodes[0];
 			while (current.parent) {
 				current = current.parent;
@@ -163,7 +163,7 @@ module pml {
 			return Query.getIndex(this.nodes[0]);
 		}
 		
-		getPreviousAll(name?: string, value?: string, checkFirstOnly?: boolean, breakOnFirstResult?: boolean): Query {
+		previousAll(name?: string, value?: string, checkFirstOnly?: boolean, breakOnFirstResult?: boolean): Query {
 			var result: Node[] = [];
 			for (var i = 0, n = this.nodes.length; i < n; i++) {
 				var node = this.nodes[i];
@@ -180,15 +180,15 @@ module pml {
 			return new Query(result);
 		}
 		
-		getPrevious(name?: string, value?: string): Query {
-			return this.getPreviousAll(name, value, true);
+		previous(name?: string, value?: string): Query {
+			return this.previousAll(name, value, true);
 		}
 		
-		getPreviousUntil(name: string, value?: string): Query {
-			return this.getPreviousAll(name, value, false, true);
+		previousUntil(name: string, value?: string): Query {
+			return this.previousAll(name, value, false, true);
 		}
 		
-		getNextAll(name?: string, value?: string, checkFirstOnly?: boolean, breakOnFirstResult?: boolean): Query {
+		nextAll(name?: string, value?: string, checkFirstOnly?: boolean, breakOnFirstResult?: boolean): Query {
 			var result: Node[] = [];
 			for (var i = 0, n = this.nodes.length; i < n; i++) {
 				var node = this.nodes[i];
@@ -209,12 +209,12 @@ module pml {
 			return new Query(result);
 		}
 		
-		getNext(name?: string, value?: string): Query {
-			return this.getNextAll(name, value, true);
+		next(name?: string, value?: string): Query {
+			return this.nextAll(name, value, true);
 		}
 		
-		getNextUntil(name: string, value?: string): Query {
-			return this.getNextAll(name, value, false, true);
+		nextUntil(name: string, value?: string): Query {
+			return this.nextAll(name, value, false, true);
 		}
 		
 		remove(): void {
@@ -293,24 +293,17 @@ module pml {
 		static getDescendantNodes(node: Node, name?: string, value?: string, childrenOnly = false): Node[] {
 			var testName = illa.isString(name);
 			var testValue = illa.isString(value);
-			if (testName || testValue) {
-				var nodes: Node[] = [];
-				var children = this.getChildNodes(node);
-				for (var i = 0, n = children.length; i < n; i++) {
-					var child = children[i];
-					if (this.getDoesMatch(node, name, value)) {
-						nodes.push(node);
+			var nodes: Node[] = [];
+			if (node.children) {
+				for (var i = 0, n = node.children.length; i < n; i++) {
+					var child = node.children[i];
+					if (this.getDoesMatch(child, name, value)) {
+						nodes.push(child);
 					}
 					if (!childrenOnly) nodes = nodes.concat(this.getDescendantNodes(child, name, value));
 				}
-				return nodes;
-			} else {
-				if (this.getIsLeaf(node)) {
-					return [];
-				} else {
-					return node.children;
-				}
 			}
+			return nodes;
 		}
 		
 		static getChildNodes(node: Node, name?: string, value?: string): Node[] {
