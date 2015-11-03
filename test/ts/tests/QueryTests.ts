@@ -20,6 +20,12 @@ describe('pml.Query', function() {
 		it('Selects child nodes.', function() {
 			expect(pq.children().getNodes()).toEqual(sampleData.children);
 		});
+		it('Filters child nodes by name.', function() {
+			expect(pq.children('bar').getNodes()).toEqual([sampleData.children[1], sampleData.children[3]]);
+		});
+		it('Filters child nodes by value.', function() {
+			expect(pq.children(null, '').getNodes()).toEqual([sampleData.children[1]]);
+		});
 	});
 	describe('.prototype.getLength()', function() {
 		it('Returns the correct length of root.', function() {
@@ -66,12 +72,12 @@ describe('pml.Query', function() {
 			expect(pq.children().getValues()).toEqual(['A', '', 'C', 'D']);
 		});
 	});
-	describe('.prototype.getIndex()', function() {
+	describe('.prototype.getParentIndex()', function() {
 		it('Returns -1 for root.', function() {
-			expect(pq.getIndex()).toEqual(-1);
+			expect(pq.getParentIndex()).toEqual(-1);
 		});
 		it('Returns the index of the first node.', function() {
-			expect(pq.children().branches().getIndex()).toEqual(4);
+			expect(pq.children().branches().getParentIndex()).toEqual(4);
 		});
 	});
 	describe('.prototype.leaves()', function() {
@@ -85,8 +91,8 @@ describe('pml.Query', function() {
 		});
 	});
 	describe('.prototype.descendants()', function() {
-		it('Selects descendant nodes.', function() {
-			var pq = new pml.Query(pml.Parser.parse(`{[|]}
+		var d: pml.Node;
+		var pq = new pml.Query(d = pml.Parser.parse(`{[|]}
 [a|
 	[b|]
 	[c|]
@@ -101,7 +107,261 @@ describe('pml.Query', function() {
 ]
 [i|]
 `));
+		it('Selects descendant nodes.', function() {
 			expect(pq.descendants().getNames()).toEqual('abcdefghi'.split(''));
+		});
+		it('Filters descendant nodes by name.', function() {
+			expect(pq.descendants('e').getNodes()).toEqual([d.children[1].children[0]]);
+		});
+		it('Filters descendant nodes by value.', function() {
+			expect(pq.descendants(null, '').getNames()).toEqual('bcfhi'.split(''));
+		});
+	});
+	describe('.prototype.parent()', function() {
+		var d: pml.Node;
+		var pq = new pml.Query(d = pml.Parser.parse(`{[|]}
+[a|
+	[b|1]
+	[c|
+		[d|1]
+		[e|0]
+	]
+]
+`));
+		it('Selects parent node.', function() {
+			expect(pq.descendants(null, '1').parent().getNames()).toEqual('ac'.split(''));
+		});
+		it('Filters parent node by name.', function() {
+			expect(pq.descendants(null, '1').parent('c').getNodes()).toEqual([d.children[0].children[1]]);
+		});
+	});
+	describe('.prototype.parents()', function() {
+		var d: pml.Node;
+		var pq = new pml.Query(d = pml.Parser.parse(`{[|]}
+[a|
+	[b|]
+	[c|
+		[d|
+			[e|]
+		]
+	]
+]
+`));
+		it('Selects parent nodes.', function() {
+			expect(pq.descendants('e').parents().getNames()).toEqual(['d', 'c', 'a', '']);
+		});
+		it('Filters parent nodes by name.', function() {
+			expect(pq.descendants('e').parents('c').getNodes()).toEqual([d.children[0].children[1]]);
+		});
+	});
+	describe('.prototype.closest()', function() {
+		var d: pml.Node;
+		var pq = new pml.Query(d = pml.Parser.parse(`{[|]}
+[a|
+	[a|]
+	[b|
+		[c|
+			[a|1]
+			[d|1]
+		]
+		[d|1]
+	]
+]
+`));
+		it('Selects closest matching node.', function() {
+			expect(pq.descendants(null, '1').closest('a').getNodes()).toEqual([d.children[0].children[1].children[0].children[0], d.children[0]]);
+		});
+	});
+	describe('.prototype.byIndex()', function() {
+		var d: pml.Node;
+		var pq = new pml.Query(d = pml.Parser.parse(`{[|]}
+[a|
+	[b|]
+]
+[c|]
+`));
+		it('Selects the node at the specified index.', function() {
+			expect(pq.descendants().byIndex(1).getNodes()).toEqual([d.children[0].children[0]]);
+		});
+	});
+	describe('.prototype.first()', function() {
+		var d: pml.Node;
+		var pq = new pml.Query(d = pml.Parser.parse(`{[|]}
+[a|
+	[b|]
+]
+[c|]
+`));
+		it('Selects the first node.', function() {
+			expect(pq.descendants().first().getNodes()).toEqual([d.children[0]]);
+		});
+	});
+	describe('.prototype.last()', function() {
+		var d: pml.Node;
+		var pq = new pml.Query(d = pml.Parser.parse(`{[|]}
+[a|
+	[b|]
+]
+[c|]
+`));
+		it('Selects the last node.', function() {
+			expect(pq.descendants().last().getNodes()).toEqual([d.children[1]]);
+		});
+	});
+	describe('.prototype.root()', function() {
+		var d: pml.Node;
+		var pq = new pml.Query(d = pml.Parser.parse(`{[|]}
+[a|
+	[b|]
+]
+[c|]
+`));
+		it('Selects the root node.', function() {
+			expect(pq.descendants('b').root().getNodes()).toEqual([d]);
+		});
+	});
+	describe('.prototype.previousAll()', function() {
+		var d: pml.Node;
+		var pq = new pml.Query(d = pml.Parser.parse(`{[|]}
+[a|]
+[b|
+	[c|]
+	[d|]
+	[e|
+		[f|]
+	]
+	[g|]
+	[h|]
+]
+[i|]
+`));
+		it('Selects previous siblings.', function() {
+			expect(pq.descendants('g').previousAll().getNames()).toEqual('edc'.split(''));
+		});
+		it('Filters previous siblings by name.', function() {
+			expect(pq.descendants('g').previousAll('e').getNodes()).toEqual([d.children[1].children[2]]);
+		});
+		it('Filters previous siblings by value.', function() {
+			expect(pq.descendants('g').previousAll(null, '').getNodes()).toEqual([d.children[1].children[1], d.children[1].children[0]]);
+		});
+	});
+	describe('.prototype.previous()', function() {
+		var d: pml.Node;
+		var pq = new pml.Query(d = pml.Parser.parse(`{[|]}
+[a|]
+[b|
+	[c|]
+	[d|1]
+	[e|
+		[f|]
+	]
+	[g|1]
+	[h|]
+]
+[i|1]
+`));
+		it('Selects previous sibling.', function() {
+			expect(pq.descendants(null, '1').previous().getNodes()).toEqual([d.children[1].children[0], d.children[1].children[2], d.children[1]]);
+		});
+		it('Filters previous sibling by name.', function() {
+			expect(pq.descendants(null, '1').previous('e').getNodes()).toEqual([d.children[1].children[2]]);
+		});
+		it('Filters previous sibling by value.', function() {
+			expect(pq.descendants(null, '1').previous(null, '').getNodes()).toEqual([d.children[1].children[0]]);
+		});
+	});
+	describe('.prototype.previousUntil()', function() {
+		var d: pml.Node;
+		var pq = new pml.Query(d = pml.Parser.parse(`{[|]}
+[a|]
+[b|
+	[c|2]
+	[d|]
+	[e|
+		[f|]
+	]
+	[g|1]
+	[h|]
+]
+[i|]
+`));
+		it('Selects previous siblings until the name matches.', function() {
+			expect(pq.descendants(null, '1').previousUntil('c').getNames()).toEqual('ed'.split(''));
+		});
+		it('Filters previous siblings until the value matches.', function() {
+			expect(pq.descendants(null, '1').previousUntil(null, '2').getNames()).toEqual('ed'.split(''));
+		});
+	});
+	describe('.prototype.nextAll()', function() {
+		var d: pml.Node;
+		var pq = new pml.Query(d = pml.Parser.parse(`{[|]}
+[a|]
+[b|
+	[c|]
+	[d|]
+	[e|
+		[f|]
+	]
+	[g|]
+	[h|]
+]
+[i|]
+`));
+		it('Selects next siblings.', function() {
+			expect(pq.descendants('d').nextAll().getNames()).toEqual('egh'.split(''));
+		});
+		it('Filters next siblings by name.', function() {
+			expect(pq.descendants('d').nextAll('e').getNodes()).toEqual([d.children[1].children[2]]);
+		});
+		it('Filters next siblings by value.', function() {
+			expect(pq.descendants('d').nextAll(null, '').getNodes()).toEqual([d.children[1].children[3], d.children[1].children[4]]);
+		});
+	});
+	describe('.prototype.next()', function() {
+		var d: pml.Node;
+		var pq = new pml.Query(d = pml.Parser.parse(`{[|]}
+[a|1]
+[b|
+	[c|]
+	[d|1]
+	[e|
+		[f|]
+	]
+	[g|1]
+	[h|]
+]
+[i|]
+`));
+		it('Selects next sibling.', function() {
+			expect(pq.descendants(null, '1').next().getNodes()).toEqual([d.children[1], d.children[1].children[2], d.children[1].children[4]]);
+		});
+		it('Filters next sibling by name.', function() {
+			expect(pq.descendants(null, '1').next('e').getNodes()).toEqual([d.children[1].children[2]]);
+		});
+		it('Filters next sibling by value.', function() {
+			expect(pq.descendants(null, '1').next(null, '').getNodes()).toEqual([d.children[1].children[4]]);
+		});
+	});
+	describe('.prototype.nextUntil()', function() {
+		var d: pml.Node;
+		var pq = new pml.Query(d = pml.Parser.parse(`{[|]}
+[a|]
+[b|
+	[c|]
+	[d|1]
+	[e|
+		[f|]
+	]
+	[g|]
+	[h|2]
+]
+[i|]
+`));
+		it('Selects next siblings until the name matches.', function() {
+			expect(pq.descendants(null, '1').nextUntil('h').getNames()).toEqual('eg'.split(''));
+		});
+		it('Filters next siblings until the value matches.', function() {
+			expect(pq.descendants(null, '1').nextUntil(null, '2').getNames()).toEqual('eg'.split(''));
 		});
 	});
 });
