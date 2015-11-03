@@ -247,7 +247,7 @@ module pml {
 			var result: T[] = [];
 			for (var i = 0, n = arr.length; i < n; i++) {
 				var item = arr[i];
-				if (result.indexOf(item) < 0) {
+				if (illa.ArrayUtil.indexOf(result, item) < 0) {
 					result.push(item);
 				}
 			}
