@@ -364,4 +364,91 @@ describe('pml.Query', function() {
 			expect(pq.descendants(null, '1').nextUntil(null, '2').getNames()).toEqual('eg'.split(''));
 		});
 	});
+	describe('.prototype.remove()', function() {
+		var d: pml.Node;
+		var pq = new pml.Query(d = pml.Parser.parse(`{[|]}
+[a|]
+[b|
+	[a|
+		[a|]
+		[c|]
+	]
+	[d|]
+	[a|]
+]
+[a|]
+[a|]
+[e|
+	[a|]
+]
+`));
+		var asPq = pq.descendants('a');
+		asPq.remove();
+		it('Removes selected nodes from their parents.', function() {
+			expect(pq.descendants().getNames()).toEqual('bde'.split(''));
+		});
+		it('Fixes next sibling links in remaining nodes.', function() {
+			expect(pq.descendants('b').getNode(0).nextSibling).toEqual(d.children[1]);
+		});
+		it('Unsets next sibling links in remaining nodes.', function() {
+			expect(pq.descendants('d').getNode(0).nextSibling).toEqual(undefined);
+		});
+		it('Fixes previous sibling links in remaining nodes.', function() {
+			expect(pq.descendants('e').getNode(0).previousSibling).toEqual(d.children[0]);
+		});
+		it('Unsets previous sibling links in remaining nodes.', function() {
+			expect(pq.descendants('d').getNode(0).previousSibling).toEqual(undefined);
+		});
+		it('Gives branches a value when they have no child nodes left.', function() {
+			expect(pq.descendants('e').getNode(0).value).toEqual('');
+		});
+		it('Unsets the children property of branches when they have no child nodes left.', function() {
+			expect(pq.descendants('e').getNode(0).children).toEqual(undefined);
+		});
+		it('Unsets the parent property of removed nodes.', function() {
+			expect(asPq.getNode(0).parent).toEqual(undefined);
+		});
+		it('Unsets the previous sibling link of removed nodes.', function() {
+			expect(asPq.getNode(3).previousSibling).toEqual(undefined);
+		});
+		it('Unsets the next sibling link of removed nodes.', function() {
+			expect(asPq.getNode(0).nextSibling).toEqual(undefined);
+		});
+	});
+	describe('.prototype.add()', function() {
+		var d: pml.Node;
+		var pq = new pml.Query(d = pml.Parser.parse(`{[|]}
+[a|]
+[b|
+	[c|]
+	[d|]
+]
+[e|]
+`));
+		var aq = new pml.Query(pml.Parser.parse('{[|]}[foo|bar][baz|]')).children();
+		pq.descendants('b').merge(pq.descendants('c')).merge(pq.descendants('e')).add(aq);
+		it('Adds nodes to selected parents.', function() {
+			expect(pml.Stringer.stringify(d)).toEqual(`{[|]}
+[a|]
+[b|
+	[c|
+		[foo|bar]
+		[baz|]
+	]
+	[d|]
+	[foo|bar]
+	[baz|]
+]
+[e|
+	[foo|bar]
+	[baz|]
+]`);
+		});
+		it('Moves the existing nodes to the first target.', function() {
+			expect(pq.descendants('b').children().leaves().not('d').getNodes()).toEqual(aq.getNodes());
+		});
+		it('Clones the existing nodes to the remaining targets.', function() {
+			expect(pq.descendants('c').children().getNodes()).not.toEqual(aq.getNodes());
+		});
+	});
 });

@@ -20,6 +20,10 @@ module pml {
 			return this.nodes;
 		}
 		
+		getNode(index: number): Node {
+			return this.nodes[index];
+		}
+		
 		getLength(): number {
 			return this.nodes.length;
 		}
@@ -235,16 +239,49 @@ module pml {
 			} else if (childOrChildren instanceof Query) {
 				toAdd = childOrChildren.nodes;
 			} else {
-				toAdd = <Node[]>childOrChildren;
+				toAdd = (<Node[]>childOrChildren).slice(0);
+			}
+			if (!illa.isNumber(index)) {
+				index = toAdd.length;
 			}
 			for (var i = 0, n = this.nodes.length; i < n; i++) {
 				var parent = this.nodes[i];
 				for (var j = 0, o = toAdd.length; j < o; j++) {
 					var child = toAdd[j];
-					if (i > 1) child = Query.cloneNode(child);
-					Query.addChildNode(parent, child, index);
+					if (i > 0) {
+						child = Query.cloneNode(child);
+					}
+					Query.addChildNode(parent, child, index + j);
 				}
 			}
+		}
+		
+		merge(other: Query): Query {
+			return new Query(this.removeDoubles(this.nodes.concat(other.nodes)));
+		}
+		
+		clone(): Query {
+			var result: Node[] = [];
+			for (var i = 0, n = this.nodes.length; i < n; i++) {
+				var node = this.nodes[i];
+				result.push(Query.cloneNode(node));
+			}
+			return new Query(result);
+		}
+		
+		filter(name: string, value?: string, negate?: boolean): Query {
+			var result: Node[] = [];
+			for (var i = 0, n = this.nodes.length; i < n; i++) {
+				var node = this.nodes[i];
+				if (Query.getDoesMatch(node, name, value) != negate) {
+					result.push(node);
+				}
+			}
+			return new Query(result);
+		}
+		
+		not(name: string, value?: string): Query {
+			return this.filter(name, value, true);
 		}
 		
 		protected removeDoubles<T>(arr: T[]): T[] {
@@ -372,6 +409,10 @@ module pml {
 						if (previousSibling) previousSibling.nextSibling = nextSibling;
 						if (nextSibling) nextSibling.previousSibling = previousSibling;
 						siblings.splice(index, 1);
+						if (!siblings.length) {
+							node.parent.children = undefined;
+							node.parent.value = '';
+						}
 					}
 				}
 				node.parent = node.previousSibling = node.nextSibling = undefined;
@@ -405,6 +446,7 @@ module pml {
 			if (child.parent) this.removeNode(child);
 			if (!parent.children) {
 				parent.children = [];
+				parent.value = undefined;
 			}
 			if (!illa.isNumber(index)) index = parent.children.length;
 			
